@@ -1,0 +1,20 @@
+# build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# rider / vs
+.idea/
+.vs/
+*.suo
+
+# native scratch
+native/build/
+*.dll.tmp
+plugins/*.vst3
+
+# os
+.DS_Store
+Thumbs.db
