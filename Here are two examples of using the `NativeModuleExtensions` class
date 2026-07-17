@@ -1,0 +1,7 @@
+NativeModule module = NativeModule.Load("path/to/module.dll");
+string fileName = module.GetFileNameWithoutExtension(); // returns "module"
+bool isWindowsDll = module.IsWindowsDll(); // returns true
+
+NativeModule anotherModule = NativeModule.Load("path/to/another_module.so");
+IReadOnlyDictionary<string, string> versionInfo = anotherModule.GetFileVersionInfo();
+Console.WriteLine(versionInfo["FileVersion"]); // prints the file version
