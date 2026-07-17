@@ -63,3 +63,50 @@ dotnet build
 
 Requires the .NET 10 SDK. Only tested on Windows-style single-file `.vst3`
 modules; the Linux/macOS bundle layout paths are written but untested.
+
+## AudioGraphExtensions
+
+`AudioGraphExtensions` provides a set of helper extension methods that make
+common graph manipulations easier. You can remove individual nodes, clear the
+entire graph, enumerate nodes in their sequential order, and locate nodes by
+their component pointer without dealing directly with the internal collections.
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+class Example
+{
+    static void Main()
+    {
+        // Create a graph and add some nodes (assume AddNode exists)
+        var graph = new AudioGraph();
+        var nodeA = graph.AddNode("A", (nint)0x1);
+        var nodeB = graph.AddNode("B", (nint)0x2);
+        var nodeC = graph.AddNode("C", (nint)0x3);
+
+        // Connect nodes
+        graph.Connect(nodeA, nodeB);
+        graph.Connect(nodeB, nodeC);
+
+        // Find a node by its component pointer
+        var found = graph.FindNodeByComponent((nint)0x2);
+        Console.WriteLine(found?.Name ?? "not found");
+
+        // Enumerate nodes in order
+        foreach (var n in graph.GetNodesInOrder())
+        {
+            Console.WriteLine(n.Name);
+        }
+
+        // Remove a node
+        graph.RemoveNode(nodeB);
+
+        // Clear the whole graph
+        graph.Clear();
+    }
+}
+```
+
+These methods are defined in `src/VstHostLite.Native/AudioGraphExtensions.cs` and
+operate directly on an `AudioGraph` instance.
