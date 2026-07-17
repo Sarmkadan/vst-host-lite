@@ -64,6 +64,50 @@ dotnet build
 Requires the .NET 10 SDK. Only tested on Windows-style single-file `.vst3`
 modules; the Linux/macOS bundle layout paths are written but untested.
 
+## NativeModuleExtensions
+
+Extension methods for working with native VST3 module files. `NativeModuleExtensions` provides utility methods to inspect module metadata such as file paths, version information, and timestamps.
+
+
+Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+class Example
+{
+    static void Main()
+    {
+        var module = new NativeModule("C:\\VST3\\Plugin.vst3");
+        
+        // Get basic file information
+        string fileName = module.GetFileNameWithoutExtension();
+        string directory = module.GetDirectory();
+        bool isWindowsDll = module.IsWindowsDll();
+        
+        // Get file metadata
+        var versionInfo = module.GetFileVersionInfo();
+        long fileSize = module.GetFileSize();
+        DateTime lastModified = module.LastWriteTimeUtc();
+        
+        Console.WriteLine($"Module: {fileName}");
+        Console.WriteLine($"Path: {directory}");
+        Console.WriteLine($"Size: {fileSize} bytes");
+        Console.WriteLine($"Modified: {lastModified}");
+        
+        if (versionInfo.Count > 0)
+        {
+            Console.WriteLine("Version info:");
+            foreach (var kvp in versionInfo)
+            {
+                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+            }
+        }
+    }
+}
+```
+
 ## AudioGraph
 
 `AudioGraph` represents a directed graph of audio processing nodes that can be connected to form signal chains. Each node wraps a VST3 component and exposes the audio processing pipeline through a simple public API. The graph maintains connections between nodes via `Prev` and `Next` references, allowing you to build complex audio routing topologies.
