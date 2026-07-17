@@ -18,3 +18,6 @@ plugins/*.vst3
 # os
 .DS_Store
 Thumbs.db
+TestResults/
+BenchmarkDotNet.Artifacts/
+.aider*
