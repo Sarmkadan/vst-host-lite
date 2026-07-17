@@ -11,24 +11,31 @@ public static class AudioGraphExtensions
     /// <param name="graph">The audio graph instance.</param>
     /// <param name="node">The node to remove.</param>
     /// <exception cref="ArgumentNullException"><paramref name="graph"/> or <paramref name="node"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="node"/> is not in the graph.</exception>
     public static void RemoveNode(this AudioGraph graph, GraphNode node)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(node);
 
         // Remove from the nodes collection
-        var nodesList = (List<GraphNode>)graph.Nodes;
+        var nodes = graph.Nodes;
+        if (!nodes.Contains(node))
+        {
+            throw new ArgumentException("The specified node is not part of the graph.", nameof(node));
+        }
+
+        var nodesList = (List<GraphNode>)nodes;
         nodesList.Remove(node);
 
         // Update connections for adjacent nodes
-        if (node.Prev is not null)
+        if (node.Prev is { } prev)
         {
-            node.Prev.Next = node.Next;
+            prev.Next = node.Next;
         }
 
-        if (node.Next is not null)
+        if (node.Next is { } next)
         {
-            node.Next.Prev = node.Prev;
+            next.Prev = node.Prev;
         }
 
         // Clear the removed node's connections
@@ -45,14 +52,14 @@ public static class AudioGraphExtensions
     {
         ArgumentNullException.ThrowIfNull(graph);
 
-        var nodesList = (List<GraphNode>)graph.Nodes;
-        foreach (var node in nodesList)
+        var nodes = graph.Nodes;
+        foreach (var node in nodes)
         {
             node.Prev = null;
             node.Next = null;
         }
 
-        nodesList.Clear();
+        ((List<GraphNode>)nodes).Clear();
     }
 
     /// <summary>
@@ -67,21 +74,21 @@ public static class AudioGraphExtensions
 
         if (graph.Nodes.Count == 0)
         {
-            return Enumerable.Empty<GraphNode>();
+            return [];
         }
 
         var startNode = graph.Nodes[0];
-        while (startNode.Prev is not null)
+        while (startNode.Prev is { } prev)
         {
-            startNode = startNode.Prev;
+            startNode = prev;
         }
 
         var result = new List<GraphNode>();
         var current = startNode;
-        while (current is not null)
+        while (current is { } curr)
         {
-            result.Add(current);
-            current = current.Next;
+            result.Add(curr);
+            current = curr.Next;
         }
 
         return result;
@@ -98,15 +105,7 @@ public static class AudioGraphExtensions
     {
         ArgumentNullException.ThrowIfNull(graph);
 
-        foreach (var node in graph.Nodes)
-        {
-            if (node.Component == component)
-            {
-                return node;
-            }
-        }
-
-        return null;
+        return graph.Nodes.FirstOrDefault(node => node.Component == component);
     }
 
     /// <summary>
@@ -125,9 +124,9 @@ public static class AudioGraphExtensions
         }
 
         var node = graph.Nodes[0];
-        while (node.Prev is not null)
+        while (node.Prev is { } prev)
         {
-            node = node.Prev;
+            node = prev;
         }
 
         return node;
@@ -149,9 +148,9 @@ public static class AudioGraphExtensions
         }
 
         var node = graph.Nodes[0];
-        while (node.Next is not null)
+        while (node.Next is { } next)
         {
-            node = node.Next;
+            node = next;
         }
 
         return node;
