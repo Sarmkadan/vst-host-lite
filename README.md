@@ -64,9 +64,9 @@ dotnet build
 Requires the .NET 10 SDK. Only tested on Windows-style single-file `.vst3`
 modules; the Linux/macOS bundle layout paths are written but untested.
 
-## AudioGraphJsonExtensions
+## AudioGraph
 
-`AudioGraphJsonExtensions` provides JSON serialization and deserialization utilities for `AudioGraph` instances, allowing you to persist and restore audio processing graphs across application sessions. The extension methods handle conversion to and from JSON format, making it easy to save graph configurations and reload them later.
+`AudioGraph` represents a directed graph of audio processing nodes that can be connected to form signal chains. Each node wraps a VST3 component and exposes the audio processing pipeline through a simple public API. The graph maintains connections between nodes via `Prev` and `Next` references, allowing you to build complex audio routing topologies.
 
 ```csharp
 using System;
@@ -76,29 +76,28 @@ class Example
 {
     static void Main()
     {
-        // Create a graph with a node
-        var graph = new AudioGraph
-        {
-            Name = "MyGraph",
-            Component = (nint)0x12345678,
-            NextIndex = 1
-        };
+        // Create a graph
+        var graph = new AudioGraph { Name = "DelayReverbChain" };
 
-        // Serialize to JSON
-        string json = graph.ToJson();
-        Console.WriteLine(json);
+        // Add processing nodes
+        var inputNode = graph.AddNode("Input", (nint)0x1000);
+        var delayNode = graph.AddNode("Delay", (nint)0x2000);
+        var reverbNode = graph.AddNode("Reverb", (nint)0x3000);
+        var outputNode = graph.AddNode("Output", (nint)0x4000);
 
-        // Deserialize from JSON
-        var restoredGraph = AudioGraph.FromJson(json);
-        Console.WriteLine(restoredGraph.Name);
+        // Connect nodes in series: Input -> Delay -> Reverb -> Output
+        graph.Connect(inputNode, delayNode);
+        graph.Connect(delayNode, reverbNode);
+        graph.Connect(reverbNode, outputNode);
 
-        // Try to deserialize with error handling
-        if (AudioGraph.TryFromJson(json, out var parsedGraph))
-        {
-            Console.WriteLine($"Successfully parsed graph: {parsedGraph.Name}");
-        }
+        // Process a block of audio (throws NotImplementedException in this implementation)
+        // var inputBuffers = new float[2][256]; // stereo 256-sample buffer
+        // var outputBuffers = new float[2][256];
+        // graph.ProcessBlock(inputBuffers, outputBuffers);
+
+        Console.WriteLine($"Graph '{graph.Name}' created with {graph.Count} nodes");
     }
 }
 ```
 
-These methods are defined in `src/VstHostLite.Native/AudioGraphJsonExtensions.cs`.
+The graph supports adding nodes, connecting them via `Connect()`, and processing audio blocks through `ProcessBlock()`. Node properties include `Name` for identification, `Component` for the underlying VST3 component handle, and `Prev`/`Next` for traversing the graph structure.
