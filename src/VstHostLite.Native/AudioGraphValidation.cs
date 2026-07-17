@@ -42,9 +42,7 @@ public static class AudioGraphValidation
     /// <returns>True if the graph is valid; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static bool IsValid(this AudioGraph? value)
-    {
-        return Validate(value).Count == 0;
-    }
+        => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that an <see cref="AudioGraph"/> instance is valid, throwing an exception if it is not.
@@ -60,12 +58,21 @@ public static class AudioGraphValidation
         if (problems.Count > 0)
         {
             throw new ArgumentException(
-                $"AudioGraph is invalid. Problems:\n{string.Join("\n", problems)}");
+                $"AudioGraph is invalid. Problems:\n{string.Join("\n", problems)}",
+                nameof(value));
         }
     }
 
+    /// <summary>
+    /// Validates a single <see cref="GraphNode"/> and adds any problems to the list.
+    /// </summary>
+    /// <param name="node">The node to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
     private static void ValidateNode(GraphNode node, List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(problems);
+
         // Validate node name
         if (string.IsNullOrWhiteSpace(node.Name))
         {
@@ -90,8 +97,21 @@ public static class AudioGraphValidation
         }
     }
 
+    /// <summary>
+    /// Validates the connections between nodes in the audio graph.
+    /// </summary>
+    /// <param name="nodes">The collection of nodes to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
     private static void ValidateConnections(IReadOnlyList<GraphNode> nodes, List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(nodes);
+        ArgumentNullException.ThrowIfNull(problems);
+
+        if (nodes.Count == 0)
+        {
+            return;
+        }
+
         var visited = new HashSet<GraphNode>();
         var hasCycle = false;
 
@@ -119,35 +139,38 @@ public static class AudioGraphValidation
             }
 
             // Traverse backwards
-            var current = node;
-            while (current != null)
+            for (var current = node; current != null; current = current.Prev)
             {
                 connectedComponents.Add(current);
-                current = current.Prev;
             }
 
             // Traverse forwards
-            current = node;
-            while (current != null)
+            for (var current = node; current != null; current = current.Next)
             {
                 connectedComponents.Add(current);
-                current = current.Next;
             }
         }
 
         // Report nodes not in any connected component
         foreach (var node in nodes)
         {
-            if (!connectedComponents.Contains(node) &&
-                (node.Prev != null || node.Next != null))
+            if (!connectedComponents.Contains(node) && node.Prev is not null || node.Next is not null)
             {
                 problems.Add($"Node '{GetNodeIdentifier(node)}' is part of a disconnected component.");
             }
         }
     }
 
+    /// <summary>
+    /// Checks for cycles in the audio graph using depth-first search.
+    /// </summary>
+    /// <param name="node">The current node being visited.</param>
+    /// <param name="visited">Set of nodes that have been fully visited.</param>
+    /// <param name="recursionStack">Set of nodes in the current recursion stack (for cycle detection).</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <param name="hasCycle">Reference to a flag indicating if a cycle has been found.</param>
     private static void CheckCycle(GraphNode node, HashSet<GraphNode> visited, HashSet<GraphNode> recursionStack,
-                                List<string> problems, ref bool hasCycle)
+        List<string> problems, ref bool hasCycle)
     {
         if (hasCycle)
         {
@@ -182,13 +205,17 @@ public static class AudioGraphValidation
         recursionStack.Remove(node);
     }
 
+    /// <summary>
+    /// Gets a human-readable identifier for a node, using its name if available or a hash code otherwise.
+    /// </summary>
+    /// <param name="node">The node to identify.</param>
+    /// <returns>A string identifier for the node.</returns>
     private static string GetNodeIdentifier(GraphNode node)
     {
-        if (string.IsNullOrWhiteSpace(node.Name))
-        {
-            return $"Node@{node.GetHashCode():X8}";
-        }
+        ArgumentNullException.ThrowIfNull(node);
 
-        return node.Name;
+        return string.IsNullOrWhiteSpace(node.Name)
+            ? $"Node@{node.GetHashCode():X8}"
+            : node.Name;
     }
 }
