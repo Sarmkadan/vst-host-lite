@@ -5,6 +5,50 @@ using System.Text.Json.Serialization;
 namespace VstHostLite.Native;
 
 /// <summary>
+/// Custom JSON converter for <see cref="nint"/> (IntPtr) values.
+/// Serializes as a hexadecimal string for JSON compatibility.
+/// </summary>
+internal sealed class NintJsonConverter : JsonConverter<nint>
+{
+    public override nint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+            return nint.Zero;
+
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            // Try to read as number first (for backwards compatibility)
+            if (reader.TryGetInt64(out long longValue))
+            {
+                return (nint)longValue;
+            }
+        }
+
+        // Read as string and parse as hex
+        string? hexString = reader.GetString();
+        if (string.IsNullOrEmpty(hexString))
+            return nint.Zero;
+
+        if (hexString.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            hexString = hexString.Substring(2);
+        }
+
+        if (ulong.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out ulong ulongValue))
+        {
+            return (nint)ulongValue;
+        }
+
+        return nint.Zero;
+    }
+
+    public override void Write(Utf8JsonWriter writer, nint value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString("X"));
+    }
+}
+
+/// <summary>
 /// Provides JSON serialization helpers for <see cref="AudioGraph"/>.
 /// </summary>
 public static class AudioGraphJsonExtensions
@@ -15,7 +59,8 @@ public static class AudioGraphJsonExtensions
     private static readonly JsonSerializerOptions _options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
+        WriteIndented = false,
+        Converters = { new NintJsonConverter() }
     };
 
     /// <summary>
