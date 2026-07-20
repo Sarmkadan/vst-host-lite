@@ -1,0 +1,1 @@
+{"nodes":[{"name":"Input","component":"0x1000","nextIndex":1},{"name":"Delay","component":"0x2000","nextIndex":2},{"name":"Reverb","component":"0x3000","nextIndex":3},{"name":"Output","component":"0x4000","nextIndex":-1}]}

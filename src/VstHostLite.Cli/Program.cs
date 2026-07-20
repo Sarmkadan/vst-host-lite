@@ -3,8 +3,9 @@ using VstHostLite.Native;
 
 // vst-host-lite CLI
 //
-// Three subcommands work: `info` loads a .vst3 and lists its factory classes.
+// Four subcommands work: `info` loads a .vst3 and lists its factory classes.
 // `validate` loads a graph JSON file and runs validation checks.
+// `graph` loads a graph JSON file and displays nodes with their connections.
 // `play` is supposed to build the audio graph and stream through the plugin -
 // it does not work (audio graph routing is unfinished). It stays here so the
 // wiring is visible for whoever picks this up.
@@ -37,6 +38,14 @@ switch (args[0])
             return 1;
         }
         return Validate(args[1]);
+
+case "graph":
+	if (args.Length < 2)
+	{
+		Console.Error.WriteLine("usage: vsthost graph <path-to-graph.json>");
+		return 1;
+	}
+	return Graph(args[1]);
 
     default:
         PrintUsage();
@@ -107,6 +116,65 @@ static int Validate(string jsonPath)
     }
 }
 
+static int Graph(string jsonPath)
+{
+    try
+    {
+        string json = File.ReadAllText(jsonPath);
+        var graph = AudioGraphJsonExtensions.FromJson(json);
+
+        Console.WriteLine("Audio Graph:");
+        Console.WriteLine($"  Nodes: {graph.Nodes.Count}");
+
+        var nodesInOrder = graph.GetNodesInOrder().ToList();
+
+        if (nodesInOrder.Count == 0)
+        {
+            Console.WriteLine("  (no nodes in graph)");
+            return 0;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Nodes:");
+
+        for (int i = 0; i < nodesInOrder.Count; i++)
+        {
+            var node = nodesInOrder[i];
+            Console.WriteLine($"  [{i}] {node.Name} (component: 0x{node.Component.ToInt64():X})");
+
+            if (node.Prev != null)
+            {
+                Console.WriteLine($"      ← connected to: {node.Prev.Name}");
+            }
+            if (node.Next != null)
+            {
+                Console.WriteLine($"      → connected to: {node.Next.Name}");
+            }
+            else
+            {
+                Console.WriteLine("      → (end of chain)");
+            }
+        }
+
+        return 0;
+    }
+    catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+    {
+        Console.Error.WriteLine($"error: file not found: {jsonPath}");
+        return 1;
+    }
+    catch (JsonException ex)
+    {
+        Console.Error.WriteLine($"error: invalid JSON: {ex.Message}");
+        return 1;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"error: {ex.Message}");
+        return 1;
+    }
+}
+
 static void PrintUsage()
 {
     Console.WriteLine("vst-host-lite - minimal VST3 host experiment");
@@ -114,5 +182,6 @@ static void PrintUsage()
     Console.WriteLine("usage:");
     Console.WriteLine(" vsthost info <path-to.vst3>     list plugin factory classes");
     Console.WriteLine(" vsthost validate <path-to-graph.json> validate audio graph");
+    Console.WriteLine(" vsthost graph <path-to-graph.json> display audio graph structure");
     Console.WriteLine(" vsthost play <path-to.vst3>     (unfinished) stream audio through plugin");
 }
