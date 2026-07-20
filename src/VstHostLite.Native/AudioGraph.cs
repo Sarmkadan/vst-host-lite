@@ -51,11 +51,17 @@ public sealed class AudioGraph
         return _processingOrder.AsReadOnly();
     }
 
+    public IReadOnlyList<int> GetProcessingOrderIds()
+    {
+        var order = GetProcessingOrder();
+        return order.Select(n => Array.IndexOf(_nodes.ToArray(), n)).ToList().AsReadOnly();
+    }
+
     private void ComputeTopologicalOrder()
     {
         _processingOrder.Clear();
 
-        // Kahn's algorithm for topological sorting
+        // Kahn's algorithm for topological sorting with cycle detection
         var inDegree = new Dictionary<GraphNode, int>();
         var adjacencyList = new Dictionary<GraphNode, List<GraphNode>>();
 
@@ -107,19 +113,96 @@ public sealed class AudioGraph
             }
         }
 
-        // If we have a cycle, _processingOrder will have fewer nodes than _nodes
-        // In that case, fall back to insertion order for remaining nodes
+        // Check for cycles
         if (_processingOrder.Count < _nodes.Count)
         {
-            // Add remaining nodes in insertion order
-            foreach (var node in _nodes)
+            // Find the cycle path
+            var cyclePath = FindCyclePath();
+            throw new InvalidOperationException(
+                $"Audio graph contains a cycle and cannot be topologically sorted. Cycle path: {FormatCyclePath(cyclePath)}");
+        }
+    }
+
+    private List<GraphNode> FindCyclePath()
+    {
+        // Use DFS to find a cycle
+        var visited = new HashSet<GraphNode>();
+        var recursionStack = new HashSet<GraphNode>();
+        var parentMap = new Dictionary<GraphNode, GraphNode>();
+        GraphNode? cycleStart = null;
+        GraphNode? cycleEnd = null;
+
+        bool DFS(GraphNode node)
+        {
+            if (recursionStack.Contains(node))
             {
-                if (!_processingOrder.Contains(node))
+                cycleStart = node;
+                cycleEnd = node;
+                return true;
+            }
+
+            if (visited.Contains(node))
+            {
+                return false;
+            }
+
+            visited.Add(node);
+            recursionStack.Add(node);
+
+            if (node.Next != null)
+            {
+                parentMap[node.Next] = node;
+                if (DFS(node.Next))
                 {
-                    _processingOrder.Add(node);
+                    return true;
                 }
             }
+
+            recursionStack.Remove(node);
+            return false;
         }
+
+        // Try to find a cycle starting from each node
+        foreach (var node in _nodes)
+        {
+            if (DFS(node))
+            {
+                break;
+            }
+        }
+
+        // Reconstruct the cycle path
+        if (cycleStart != null && cycleEnd != null)
+        {
+            var cyclePath = new List<GraphNode>();
+            var current = cycleEnd;
+            cyclePath.Add(current);
+
+            // Walk back through parent pointers until we reach cycleStart
+            while (current != cycleStart && parentMap.TryGetValue(current, out var parent))
+            {
+                current = parent;
+                cyclePath.Add(current);
+            }
+
+            // Reverse to get the cycle in forward direction
+            cyclePath.Reverse();
+            return cyclePath;
+        }
+
+        // If we couldn't find a cycle with DFS, return nodes that weren't processed
+        return _nodes.Where(n => !_processingOrder.Contains(n)).ToList();
+    }
+
+    private string FormatCyclePath(List<GraphNode> cyclePath)
+    {
+        if (cyclePath.Count == 0)
+        {
+            return "unknown cycle";
+        }
+
+        var nodeIds = cyclePath.Select(n => Array.IndexOf(_nodes.ToArray(), n)).ToList();
+        return $"[{string.Join(" → ", nodeIds)}]";
     }
 
     /// <summary>
