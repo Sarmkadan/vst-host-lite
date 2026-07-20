@@ -10,13 +10,15 @@ namespace VstHostLite.Native;
 public sealed class AudioGraph
 {
     private readonly List<GraphNode> _nodes = new();
+    private readonly List<GraphNode> _processingOrder = new();
+    private bool _topologyDirty = true;
 
     public IReadOnlyList<GraphNode> Nodes => _nodes;
 
     public GraphNode AddNode(string name, nint component)
     {
         var node = new GraphNode(name, component);
-        _nodes.Add(node);
+        AddNode(node);
         return node;
     }
 
@@ -26,6 +28,90 @@ public sealed class AudioGraph
         // is unsolved.
         from.Next = to;
         to.Prev = from;
+        _topologyDirty = true;
+    }
+
+    public void AddNode(GraphNode node)
+    {
+        _nodes.Add(node);
+        _topologyDirty = true;
+    }
+
+    public IReadOnlyList<GraphNode> GetProcessingOrder()
+    {
+        if (_topologyDirty)
+        {
+            ComputeTopologicalOrder();
+            _topologyDirty = false;
+        }
+        return _processingOrder.AsReadOnly();
+    }
+
+    private void ComputeTopologicalOrder()
+    {
+        _processingOrder.Clear();
+
+        // Kahn's algorithm for topological sorting
+        var inDegree = new Dictionary<GraphNode, int>();
+        var adjacencyList = new Dictionary<GraphNode, List<GraphNode>>();
+
+        // Initialize data structures
+        foreach (var node in _nodes)
+        {
+            inDegree[node] = 0;
+            adjacencyList[node] = new List<GraphNode>();
+        }
+
+        // Build adjacency list and calculate in-degrees
+        foreach (var node in _nodes)
+        {
+            if (node.Next != null)
+            {
+                adjacencyList[node].Add(node.Next);
+                inDegree[node.Next]++;
+            }
+        }
+
+        // Find all nodes with zero in-degree
+        var queue = new Queue<GraphNode>();
+        foreach (var node in _nodes)
+        {
+            if (inDegree[node] == 0)
+            {
+                queue.Enqueue(node);
+            }
+        }
+
+        // Process nodes in topological order
+        while (queue.Count > 0)
+        {
+            var node = queue.Dequeue();
+            _processingOrder.Add(node);
+
+            // Decrement in-degree of neighbors
+            foreach (var neighbor in adjacencyList[node])
+            {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] == 0)
+                {
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        // If we have a cycle, _processingOrder will have fewer nodes than _nodes
+        // In that case, fall back to insertion order for remaining nodes
+        if (_processingOrder.Count < _nodes.Count)
+        {
+            // Add remaining nodes in insertion order
+            foreach (var node in _nodes)
+            {
+                if (!_processingOrder.Contains(node))
+                {
+                    _processingOrder.Add(node);
+                }
+            }
+        }
     }
 
     /// <summary>
