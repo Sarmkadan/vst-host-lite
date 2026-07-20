@@ -21,6 +21,13 @@ plugin, but the actual audio routing never came together. Parking it here.
   ```
 
   This prints the class count and each class name / category / CID.
+- Scanning directories for plugins:
+
+  ```
+  vsthost scan /path/to/VstPlugins
+  ```
+
+  This recursively finds `.vst3` files, lists their classes, and prints a summary.
 
 ## Where it stalled
 
