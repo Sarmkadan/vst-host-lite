@@ -38,15 +38,14 @@ static int Info(string path)
     try
     {
         using var module = NativeModule.Load(path);
-        var factory = module.GetFactory();
-        var count = Vst3Interop.CountClasses(factory);
+        var infos = module.ScanPluginClasses();
 
         Console.WriteLine($"module : {module.Path}");
-        Console.WriteLine($"classes: {count}");
-        for (var i = 0; i < count; i++)
+        Console.WriteLine($"classes: {infos.Count}");
+        for (var i = 0; i < infos.Count; i++)
         {
-            var info = Vst3Interop.GetClassInfo(factory, i);
-            Console.WriteLine($"  [{i}] {info.Name}  ({info.Category})  cid={info.Cid}");
+            var info = infos[i];
+            Console.WriteLine($" [{i}] {info.Name} ({info.Category}) cid={info.Cid}");
         }
         return 0;
     }
@@ -62,6 +61,6 @@ static void PrintUsage()
     Console.WriteLine("vst-host-lite - minimal VST3 host experiment");
     Console.WriteLine();
     Console.WriteLine("usage:");
-    Console.WriteLine("  vsthost info <path-to.vst3>   list plugin factory classes");
-    Console.WriteLine("  vsthost play <path-to.vst3>   (unfinished) stream audio through plugin");
+    Console.WriteLine(" vsthost info <path-to.vst3> list plugin factory classes");
+    Console.WriteLine(" vsthost play <path-to.vst3> (unfinished) stream audio through plugin");
 }
