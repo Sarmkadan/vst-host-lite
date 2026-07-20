@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using VstHostLite.Native;
 
@@ -46,6 +47,14 @@ case "graph":
 		return 1;
 	}
 	return Graph(args[1]);
+
+        case "stats":
+            if (args.Length < 2)
+            {
+                Console.Error.WriteLine("usage: vsthost stats <path-to-graph.json>");
+                return 1;
+            }
+            return Stats(args[1]);
 
     default:
         PrintUsage();
@@ -183,5 +192,91 @@ static void PrintUsage()
     Console.WriteLine(" vsthost info <path-to.vst3>     list plugin factory classes");
     Console.WriteLine(" vsthost validate <path-to-graph.json> validate audio graph");
     Console.WriteLine(" vsthost graph <path-to-graph.json> display audio graph structure");
+    Console.WriteLine(" vsthost stats <path-to-graph.json> print audio graph statistics");
     Console.WriteLine(" vsthost play <path-to.vst3>     (unfinished) stream audio through plugin");
+}
+
+static int Stats(string jsonPath)
+{
+    try
+    {
+        string json = File.ReadAllText(jsonPath);
+        var graph = AudioGraphJsonExtensions.FromJson(json);
+
+        var nodes = graph.Nodes;
+        var nodesInOrder = graph.GetNodesInOrder().ToList();
+
+        // Count edges
+        int edgeCount = 0;
+        int generatorCount = 0; // nodes with no Prev (start of chains)
+        int sinkCount = 0;     // nodes with no Next (end of chains)
+        
+        foreach (var node in nodes)
+        {
+            if (node.Prev == null) generatorCount++;
+            if (node.Next == null) sinkCount++;
+            if (node.Prev != null || node.Next != null) edgeCount++;
+        }
+
+        // Calculate max depth using topological order
+        int maxDepth = 0;
+        var depthMap = new Dictionary<GraphNode, int>();
+        
+        foreach (var node in nodesInOrder)
+        {
+            int depth = 0;
+            var current = node;
+            while (current != null)
+            {
+                if (depthMap.TryGetValue(current, out int existingDepth))
+                {
+                    depth = existingDepth + 1;
+                    break;
+                }
+                current = current.Prev;
+            }
+            
+            depthMap[node] = depth;
+            if (depth > maxDepth) maxDepth = depth;
+        }
+
+        // Validate graph
+        var problems = graph.Validate();
+
+        // Print statistics
+        Console.WriteLine("Audio Graph Statistics:");
+        Console.WriteLine($"  Node count: {nodes.Count}");
+        Console.WriteLine($"  Edge count: {edgeCount}");
+        Console.WriteLine($"  Max depth: {maxDepth}");
+        Console.WriteLine($"  Generator count: {generatorCount}");
+        Console.WriteLine($"  Sink count: {sinkCount}");
+        Console.WriteLine($"  Detected issues: {problems.Count}");
+        
+        if (problems.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Validation issues:");
+            for (int i = 0; i < problems.Count; i++)
+            {
+                Console.WriteLine($"  [{i + 1}] {problems[i]}");
+            }
+        }
+
+        return problems.Count == 0 ? 0 : 1;
+    }
+    catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+    {
+        Console.Error.WriteLine($"error: file not found: {jsonPath}");
+        return 1;
+    }
+    catch (JsonException ex)
+    {
+        Console.Error.WriteLine($"error: invalid JSON: {ex.Message}");
+        return 1;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"error: {ex.Message}");
+        return 1;
+    }
 }
