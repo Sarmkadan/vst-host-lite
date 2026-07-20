@@ -29,7 +29,7 @@ public static class SampleRateConverter
             }
             else
             {
-                output[i] = input[index] + fraction * (input[index + 1] - input[index]);
+                output[i] = input[index] + (float)fraction * (input[index + 1] - input[index]);
             }
         }
 
