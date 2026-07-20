@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace VstHostLite.Native;
 
 /// <summary>
@@ -73,28 +77,32 @@ public sealed class AudioGraph
         }
 
         // Find all nodes with zero in-degree
-        var queue = new Queue<GraphNode>();
+        // Use a list and always pick the node with the smallest index in _nodes
+        // to maintain insertion order for nodes with same in-degree
+        var availableNodes = new List<GraphNode>();
         foreach (var node in _nodes)
         {
             if (inDegree[node] == 0)
             {
-                queue.Enqueue(node);
+                availableNodes.Add(node);
             }
         }
 
-        // Process nodes in topological order
-        while (queue.Count > 0)
+        // Process nodes in topological order, preferring nodes that appear earlier
+        while (availableNodes.Count > 0)
         {
-            var node = queue.Dequeue();
-            _processingOrder.Add(node);
+            // Find the node with the smallest index in _nodes
+            var nodeToProcess = availableNodes.OrderBy(node => Array.IndexOf(_nodes.ToArray(), node)).First();
+            availableNodes.Remove(nodeToProcess);
+            _processingOrder.Add(nodeToProcess);
 
             // Decrement in-degree of neighbors
-            foreach (var neighbor in adjacencyList[node])
+            foreach (var neighbor in adjacencyList[nodeToProcess])
             {
                 inDegree[neighbor]--;
                 if (inDegree[neighbor] == 0)
                 {
-                    queue.Enqueue(neighbor);
+                    availableNodes.Add(neighbor);
                 }
             }
         }
@@ -110,6 +118,66 @@ public sealed class AudioGraph
                 {
                     _processingOrder.Add(node);
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Merges another audio graph into this graph, importing all nodes and edges.
+    /// </summary>
+    /// <param name="other">The audio graph to merge into this graph.</param>
+    /// <param name="idPrefix">The prefix to apply to all node names from the other graph to avoid id collisions.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="other"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when there would be id collisions after applying the prefix.</exception>
+    public void Merge(AudioGraph other, string idPrefix)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        ArgumentException.ThrowIfNullOrEmpty(idPrefix);
+
+        // Check for collisions after prefixing
+        var existingNames = new HashSet<string>(_nodes.Select(n => n.Name));
+        foreach (var node in other._nodes)
+        {
+            var prefixedName = idPrefix + node.Name;
+            if (existingNames.Contains(prefixedName))
+            {
+                throw new ArgumentException(
+                    $"Node name collision after prefixing: '{prefixedName}'. " +
+                    "The target graph already contains a node with this name.",
+                    nameof(idPrefix));
+            }
+        }
+
+        // Store the starting index for the merged nodes
+        int mergeStartIndex = _nodes.Count;
+
+        // Import all nodes from the other graph with prefixed names
+        foreach (var node in other._nodes)
+        {
+            var prefixedName = idPrefix + node.Name;
+            var newNode = new GraphNode(prefixedName, node.Component);
+            AddNode(newNode);
+        }
+
+        // Import all connections from the other graph
+        // Create a mapping from original node references to prefixed node references
+        var nodeMapping = new Dictionary<GraphNode, GraphNode>();
+        for (int i = 0; i < other._nodes.Count; i++)
+        {
+            var originalNode = other._nodes[i];
+            var prefixedNode = _nodes[mergeStartIndex + i]; // Nodes were added after original nodes
+            nodeMapping[originalNode] = prefixedNode;
+        }
+
+        // Reconnect the graph using the mapping
+        foreach (var originalNode in other._nodes)
+        {
+            var prefixedSourceNode = nodeMapping[originalNode];
+            var targetNode = originalNode.Next;
+
+            if (targetNode != null && nodeMapping.TryGetValue(targetNode, out var prefixedTargetNode))
+            {
+                Connect(prefixedSourceNode, prefixedTargetNode);
             }
         }
     }

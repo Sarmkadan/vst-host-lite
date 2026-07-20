@@ -24,7 +24,7 @@ public class PluginScanCacheTests
     {
         // Arrange
         var testPluginPath = Path.GetTempFileName() + ".vst3";
-        var cacheFilePath = testPluginPath + PluginScanCacheTests.PluginScanCache.CacheFileExtension;
+        var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
         {
@@ -66,7 +66,7 @@ public class PluginScanCacheTests
     {
         // Arrange
         var testPluginPath = Path.GetTempFileName() + ".vst3";
-        var cacheFilePath = testPluginPath + PluginScanCacheTests.PluginScanCache.CacheFileExtension;
+        var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
         {
@@ -113,7 +113,7 @@ public class PluginScanCacheTests
     {
         // Arrange
         var testPluginPath = Path.GetTempFileName() + ".vst3";
-        var cacheFilePath = testPluginPath + PluginScanCacheTests.PluginScanCache.CacheFileExtension;
+        var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
         {
@@ -163,15 +163,15 @@ public class PluginScanCacheTests
             PluginScanCache.Save(plugin2Path, testInfos2);
 
             // Verify both caches exist
-            Assert.True(File.Exists(plugin1Path + PluginScanCacheTests.PluginScanCache.CacheFileExtension));
-            Assert.True(File.Exists(plugin2Path + PluginScanCacheTests.PluginScanCache.CacheFileExtension));
+            Assert.True(File.Exists(plugin1Path + PluginScanCache.CacheFileExtension));
+            Assert.True(File.Exists(plugin2Path + PluginScanCache.CacheFileExtension));
 
             // Act - clear all caches
             PluginScanCache.ClearAll();
 
             // Assert - both caches should be removed
-            Assert.False(File.Exists(plugin1Path + PluginScanCacheTests.PluginScanCache.CacheFileExtension));
-            Assert.False(File.Exists(plugin2Path + PluginScanCacheTests.PluginScanCache.CacheFileExtension));
+            Assert.False(File.Exists(plugin1Path + PluginScanCache.CacheFileExtension));
+            Assert.False(File.Exists(plugin2Path + PluginScanCache.CacheFileExtension));
         }
         finally
         {

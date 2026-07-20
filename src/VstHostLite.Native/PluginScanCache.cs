@@ -18,7 +18,7 @@ public static class PluginScanCache
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    private const string CacheFileExtension = ".vst3.cache.json";
+    public const string CacheFileExtension = ".vst3.cache.json";
 
     /// <summary>
     /// Gets the cache file path for a plugin.
