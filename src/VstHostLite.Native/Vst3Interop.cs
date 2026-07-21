@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace VstHostLite.Native;
@@ -41,6 +43,57 @@ public static class Vst3Interop
             Cid: Convert.ToHexString(raw.Cid),
             Category: FromAscii(raw.Category),
             Name: FromAscii(raw.Name));
+    }
+
+    /// <summary>
+    /// Filters a collection of <see cref="PluginClassInfo"/> objects according to
+    /// the provided name substring (<paramref name="filter"/>) and/or exact
+    /// category (<paramref name="category"/>). Matching is case‑insensitive.
+    /// </summary>
+    /// <param name="infos">The source collection of plugin class infos.</param>
+    /// <param name="filter">
+    /// Optional case‑insensitive substring to match against <see cref="PluginClassInfo.Name"/>.
+    /// </param>
+    /// <param name="category">
+    /// Optional case‑insensitive exact match to compare with <see cref="PluginClassInfo.Category"/>.
+    /// </param>
+    /// <returns>A list containing only the items that satisfy the filter criteria.</returns>
+    public static List<PluginClassInfo> FilterPluginClasses(
+        IEnumerable<PluginClassInfo> infos,
+        string? filter,
+        string? category)
+    {
+        // If no filters are supplied, return the full list.
+        if (filter == null && category == null)
+        {
+            return new List<PluginClassInfo>(infos);
+        }
+
+        var result = new List<PluginClassInfo>();
+
+        foreach (var info in infos)
+        {
+            bool matches = true;
+
+            if (filter != null)
+            {
+                // Case‑insensitive substring match on the plugin name.
+                matches &= info.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            if (category != null)
+            {
+                // Exact case‑insensitive match on the category.
+                matches &= string.Equals(info.Category, category, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (matches)
+            {
+                result.Add(info);
+            }
+        }
+
+        return result;
     }
 
     private static string FromAscii(byte[] buffer)
