@@ -151,12 +151,15 @@ public static class AudioGraphValidation
             }
         }
 
-        // Report nodes not in any connected component
+        // Report nodes that have connections but are not in any connected component
         foreach (var node in nodes)
         {
-            if (!connectedComponents.Contains(node) && node.Prev is not null || node.Next is not null)
+            if (node.Prev is not null || node.Next is not null)
             {
-                problems.Add($"Node '{GetNodeIdentifier(node)}' is part of a disconnected component.");
+                if (!connectedComponents.Contains(node))
+                {
+                    problems.Add($"Node '{GetNodeIdentifier(node)}' is part of a disconnected component.");
+                }
             }
         }
     }
@@ -192,11 +195,8 @@ public static class AudioGraphValidation
         visited.Add(node);
         recursionStack.Add(node);
 
-        if (node.Prev != null)
-        {
-            CheckCycle(node.Prev, visited, recursionStack, problems, ref hasCycle);
-        }
-
+        // Only follow Next pointers to avoid false cycle detection from bidirectional Prev/Next links
+        // The graph structure is intentionally bidirectional, so we only check in the forward direction
         if (!hasCycle && node.Next != null)
         {
             CheckCycle(node.Next, visited, recursionStack, problems, ref hasCycle);
