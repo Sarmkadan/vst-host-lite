@@ -1,6 +1,9 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/VstHostLite.Cli/VstHostLite.Cli.csproj" />
-    <Project Path="src/VstHostLite.Native/VstHostLite.Native.csproj" />
-  </Folder>
+<Solution> <Folder Name="/src/">
+<Project Path="src/VstHostLite.Cli/VstHostLite.Cli.csproj" />
+<Project Path="src/VstHostLite.Native/VstHostLite.Native.csproj" />
+</Folder>
+<Folder Name="/tests/">
+<Project Path="tests/VstHostLite.Cli.Tests/VstHostLite.Cli.Tests.csproj" />
+<Project Path="tests/VstHostLite.Native.Tests/VstHostLite.Native.Tests.csproj" />
+</Folder>
 </Solution>

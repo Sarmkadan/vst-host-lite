@@ -11,21 +11,25 @@ using VstHostLite.Native;
 // it does not work (audio graph routing is unfinished). It stays here so the
 // wiring is visible for whoever picks this up.
 
-if (args.Length == 0)
+public static class Program
 {
-    PrintUsage();
-    return 1;
-}
-
-switch (args[0])
-{
-    case "info":
-        if (args.Length < 2)
+    public static int Main(string[] args)
+    {
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("usage: vsthost info <path-to.vst3>");
+            PrintUsage();
             return 1;
         }
-        return Info(args[1]);
+
+        switch (args[0])
+        {
+            case "info":
+                if (args.Length < 2)
+                {
+                    Console.Error.WriteLine("usage: vsthost info <path-to.vst3>");
+                    return 1;
+                }
+                return Info(args[1]);
 
     case "play":
         Console.Error.WriteLine("`play` is not implemented - audio graph routing is unfinished.");
@@ -278,5 +282,8 @@ static int Stats(string jsonPath)
     {
         Console.Error.WriteLine($"error: {ex.Message}");
         return 1;
+    }
+}
+
     }
 }
