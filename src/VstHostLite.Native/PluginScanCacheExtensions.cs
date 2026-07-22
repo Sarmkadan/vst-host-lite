@@ -25,13 +25,13 @@ public static class PluginScanCacheExtensions
         }
 
         // Scan fresh if cache is invalid or doesn't exist
-        var factory = module.GetFactory();
-        var count = Vst3Interop.CountClasses(factory);
+        using var factoryPtr = new Vst3Interop.ComPtr<nint>(module.GetFactory());
+        var count = Vst3Interop.CountClasses(factoryPtr.Pointer);
         var infos = new List<PluginClassInfo>(count);
 
         for (var i = 0; i < count; i++)
         {
-            var info = Vst3Interop.GetClassInfo(factory, i);
+            var info = Vst3Interop.GetClassInfo(factoryPtr.Pointer, i);
             infos.Add(info);
         }
 
