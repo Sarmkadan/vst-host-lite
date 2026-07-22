@@ -22,27 +22,41 @@ public static class Vst3Interop
         if (factory == 0)
             return 0;
 
-        var vtable = Marshal.ReadIntPtr(factory);
-        var slot = Marshal.ReadIntPtr(vtable, SlotCountClasses * nint.Size);
-        var count = Marshal.GetDelegateForFunctionPointer<CountDelegate>(slot);
-        return count(factory);
+        try
+        {
+            var vtable = Marshal.ReadIntPtr(factory);
+            var slot = Marshal.ReadIntPtr(vtable, SlotCountClasses * nint.Size);
+            var count = Marshal.GetDelegateForFunctionPointer<CountDelegate>(slot);
+            return count(factory);
+        }
+        catch
+        {
+            throw;
+        }
     }
 
     public static PluginClassInfo GetClassInfo(nint factory, int index)
     {
-        var vtable = Marshal.ReadIntPtr(factory);
-        var slot = Marshal.ReadIntPtr(vtable, SlotGetClassInfo * nint.Size);
-        var getInfo = Marshal.GetDelegateForFunctionPointer<GetClassInfoDelegate>(slot);
+        try
+        {
+            var vtable = Marshal.ReadIntPtr(factory);
+            var slot = Marshal.ReadIntPtr(vtable, SlotGetClassInfo * nint.Size);
+            var getInfo = Marshal.GetDelegateForFunctionPointer<GetClassInfoDelegate>(slot);
 
-        var raw = new PClassInfoRaw();
-        var hr = getInfo(factory, index, ref raw);
-        if (hr != 0)
-            throw new InvalidOperationException($"getClassInfo({index}) failed: 0x{hr:X8}");
+            var raw = new PClassInfoRaw();
+            var hr = getInfo(factory, index, ref raw);
+            if (hr != 0)
+                throw new InvalidOperationException($"getClassInfo({index}) failed: 0x{hr:X8}");
 
-        return new PluginClassInfo(
-            Cid: Convert.ToHexString(raw.Cid),
-            Category: FromAscii(raw.Category),
-            Name: FromAscii(raw.Name));
+            return new PluginClassInfo(
+                Cid: Convert.ToHexString(raw.Cid),
+                Category: FromAscii(raw.Category),
+                Name: FromAscii(raw.Name));
+        }
+        catch
+        {
+            throw;
+        }
     }
 
     /// <summary>
