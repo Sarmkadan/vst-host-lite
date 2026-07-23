@@ -1,0 +1,2 @@
+
+This file includes 7 test methods that cover the happy path, edge cases, and error paths for the `ToJson`, `FromJson`, and `TryFromJson` methods. The tests also cover the `NodeDto` class and the `NintJsonConverter` class.
