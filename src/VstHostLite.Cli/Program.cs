@@ -43,7 +43,8 @@ public static class Program
             { "graph", new GraphCommand() },
             { "stats", new StatsCommand() },
             { "scan", new ScanCommand() },
-            { "play", new PlayCommand() }
+            { "play", new PlayCommand() },
+            { "scan-one", new ScanOneCommand() }
         };
         return commands;
     }

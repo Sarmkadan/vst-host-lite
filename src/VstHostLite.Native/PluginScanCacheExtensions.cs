@@ -24,7 +24,17 @@ public static class PluginScanCacheExtensions
             return cachedInfo!;
         }
 
-        // Scan fresh if cache is invalid or doesn't exist
+        // Attempt process-isolated scan first for crash safety
+        var isolatedResult = PluginScanCache.ScanWithIsolation(module.Path);
+        if (isolatedResult != null)
+        {
+            // Save to cache for future use
+            PluginScanCache.Save(module.Path, isolatedResult);
+            return isolatedResult;
+        }
+
+        // Fall back to in-process scanning if isolation failed
+        // This maintains backward compatibility if isolation isn't available
         using var factoryPtr = new Vst3Interop.ComPtr<nint>(module.GetFactory());
         var count = Vst3Interop.CountClasses(factoryPtr.Pointer);
         var infos = new List<PluginClassInfo>(count);

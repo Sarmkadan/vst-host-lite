@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -5,8 +6,9 @@ namespace VstHostLite.Native;
 
 /// <summary>
 /// Provides caching for VST3 plugin scanning results.
-/// Caches plugin path -> (last write time, list of PluginClassInfo)
-/// Invalidates entries when the plugin file's modification time changes.
+/// Caches plugin path -> (file size, last write time, list of PluginClassInfo)
+/// Invalidates entries when the plugin file's modification time or size changes.
+/// Supports process-isolated scanning to prevent crashes from affecting the main process.
 /// </summary>
 public static class PluginScanCache
 {
@@ -19,6 +21,33 @@ public static class PluginScanCache
     };
 
     public const string CacheFileExtension = ".vst3.cache.json";
+    public const int CacheSchemaVersion = 2;
+
+    /// <summary>
+    /// Cache entry structure containing metadata for validation.
+    /// </summary>
+    private sealed class CacheEntry
+    {
+        /// <summary>
+        /// Schema version for cache format compatibility.
+        /// </summary>
+        public int SchemaVersion { get; set; } = CacheSchemaVersion;
+
+        /// <summary>
+        /// File size of the plugin at the time of caching (bytes).
+        /// </summary>
+        public long FileSize { get; set; }
+
+        /// <summary>
+        /// Last write time of the plugin at the time of caching (UTC).
+        /// </summary>
+        public DateTime LastWriteTimeUtc { get; set; }
+
+        /// <summary>
+        /// List of plugin class information.
+        /// </summary>
+        public List<PluginClassInfo>? PluginClasses { get; set; }
+    }
 
     /// <summary>
     /// Gets the cache file path for a plugin.
@@ -37,8 +66,17 @@ public static class PluginScanCache
     /// <param name="pluginPath">The path to the VST3 plugin.</param>
     /// <param name="cachedInfo">Output: cached plugin class info if valid.</param>
     /// <returns>True if valid cached data exists; false otherwise.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="pluginPath"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginPath"/> is empty or whitespace</exception>
     public static bool TryGetFresh(string pluginPath, out List<PluginClassInfo>? cachedInfo)
     {
+        ArgumentNullException.ThrowIfNull(pluginPath);
+
+        if (string.IsNullOrWhiteSpace(pluginPath))
+        {
+            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+        }
+
         cachedInfo = null;
 
         if (!File.Exists(pluginPath))
@@ -56,22 +94,29 @@ public static class PluginScanCache
 
         try
         {
-            var cacheFileInfo = new FileInfo(cacheFilePath);
             var pluginFileInfo = new FileInfo(pluginPath);
+            var cacheEntry = JsonSerializer.Deserialize<CacheEntry>(File.ReadAllText(cacheFilePath), _jsonOptions);
 
-            // Check if plugin file has been modified since cache was created
-            if (cacheFileInfo.LastWriteTimeUtc < pluginFileInfo.LastWriteTimeUtc)
+            // Validate cache entry structure
+            if (cacheEntry?.PluginClasses == null || cacheEntry.SchemaVersion != CacheSchemaVersion)
             {
-                // Plugin file is newer than cache, invalidate cache
+                // Invalid schema version or missing data, treat as stale
                 File.Delete(cacheFilePath);
                 return false;
             }
 
-            // Read and deserialize cache
-            var json = File.ReadAllText(cacheFilePath);
-            cachedInfo = JsonSerializer.Deserialize<List<PluginClassInfo>>(json, _jsonOptions);
+            // Check if plugin file has changed since cache was created
+            // Use both file size and last write time for more robust invalidation
+            if (cacheEntry.FileSize != pluginFileInfo.Length ||
+                cacheEntry.LastWriteTimeUtc != pluginFileInfo.LastWriteTimeUtc)
+            {
+                // Plugin file has changed, invalidate cache
+                File.Delete(cacheFilePath);
+                return false;
+            }
 
-            return cachedInfo != null;
+            cachedInfo = cacheEntry.PluginClasses;
+            return true;
         }
         catch
         {
@@ -81,20 +126,122 @@ public static class PluginScanCache
     }
 
     /// <summary>
+    /// Scans a plugin using a child process for crash isolation.
+    /// </summary>
+    /// <param name="pluginPath">The path to the VST3 plugin.</param>
+    /// <returns>List of plugin class information, or null if scanning failed.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="pluginPath"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginPath"/> is empty or whitespace</exception>
+    public static List<PluginClassInfo>? ScanWithIsolation(string pluginPath)
+    {
+        ArgumentNullException.ThrowIfNull(pluginPath);
+
+        if (string.IsNullOrWhiteSpace(pluginPath))
+        {
+            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+        }
+
+        if (!File.Exists(pluginPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            // Use process isolation to scan the plugin
+            // This prevents crashes in the plugin from affecting the main process
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = Environment.ProcessPath ?? throw new InvalidOperationException("Could not determine current process path."),
+                    Arguments = $"scan-one \"{pluginPath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8,
+                    StandardErrorEncoding = System.Text.Encoding.UTF8
+                }
+            };
+
+            process.Start();
+
+            // Wait for completion with timeout to prevent hanging
+            if (!process.WaitForExit(10000)) // 10 second timeout
+            {
+                process.Kill();
+                return null;
+            }
+
+            if (process.ExitCode != 0)
+            {
+                // Non-zero exit code indicates failure (e.g., plugin crashed during scan)
+                return null;
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                // Log errors to stderr but continue with empty result
+                Console.Error.WriteLine(error);
+            }
+
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                return null;
+            }
+
+            // Parse JSON output from child process
+            var infos = JsonSerializer.Deserialize<List<PluginClassInfo>>(output, _jsonOptions);
+            return infos;
+        }
+        catch
+        {
+            // If anything goes wrong with process isolation, return null
+            // This allows the caller to fall back to non-isolated scanning
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Stores plugin class info in the cache.
     /// </summary>
     /// <param name="pluginPath">The path to the VST3 plugin.</param>
     /// <param name="pluginClassInfos">List of plugin class info to cache.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="pluginPath"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginPath"/> is empty or whitespace</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="pluginClassInfos"/> is <see langword="null"/></exception>
     public static void Save(string pluginPath, List<PluginClassInfo> pluginClassInfos)
     {
-        if (pluginClassInfos == null || pluginClassInfos.Count == 0)
+        ArgumentNullException.ThrowIfNull(pluginPath);
+        ArgumentNullException.ThrowIfNull(pluginClassInfos);
+
+        if (string.IsNullOrWhiteSpace(pluginPath))
+        {
+            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+        }
+
+        if (pluginClassInfos.Count == 0)
         {
             // Don't cache empty results
             return;
         }
 
         var cacheFilePath = GetCacheFilePath(pluginPath);
-        var json = JsonSerializer.Serialize(pluginClassInfos, _jsonOptions);
+        var pluginFileInfo = new FileInfo(pluginPath);
+
+        var entry = new CacheEntry
+        {
+            SchemaVersion = CacheSchemaVersion,
+            FileSize = pluginFileInfo.Length,
+            LastWriteTimeUtc = pluginFileInfo.LastWriteTimeUtc,
+            PluginClasses = pluginClassInfos
+        };
+
+        var json = JsonSerializer.Serialize(entry, _jsonOptions);
         File.WriteAllText(cacheFilePath, json);
     }
 
