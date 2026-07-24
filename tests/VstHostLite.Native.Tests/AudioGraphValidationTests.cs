@@ -415,4 +415,80 @@ public class AudioGraphValidationTests
         Assert.Contains(problems, p => p.Contains("null component pointer"));
         Assert.Contains(problems, p => p.Contains("self-reference"));
     }
+
+    [Fact]
+    public void Validate_SelfConnectionInNext_ReturnsError()
+    {
+        // Arrange - Create a node and connect it to itself
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("selfConnected", new nint(1));
+        graph.Connect(node1, node1); // Self-connection
+
+        // Act
+        var problems = graph.Validate();
+
+        // Assert - Should detect the cycle
+        Assert.Single(problems);
+        Assert.Contains("cycle", problems[0]);
+    }
+
+    [Fact]
+    public void Validate_SimpleCycle_ReturnsCycleError()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", new nint(1));
+        var node2 = graph.AddNode("node2", new nint(2));
+        graph.Connect(node1, node2);
+        graph.Connect(node2, node1); // Create cycle A -> B -> A
+
+        // Act
+        var problems = graph.Validate();
+
+        // Assert
+        Assert.Single(problems);
+        Assert.Contains("cycle", problems[0]);
+    }
+
+    [Fact]
+    public void Validate_LongCycle_ReturnsCycleError()
+    {
+        // Arrange - Create a longer cycle: A -> B -> C -> D -> A
+        var graph = new AudioGraph();
+        var nodeA = graph.AddNode("A", new nint(1));
+        var nodeB = graph.AddNode("B", new nint(2));
+        var nodeC = graph.AddNode("C", new nint(3));
+        var nodeD = graph.AddNode("D", new nint(4));
+        graph.Connect(nodeA, nodeB);
+        graph.Connect(nodeB, nodeC);
+        graph.Connect(nodeC, nodeD);
+        graph.Connect(nodeD, nodeA); // Create cycle
+
+        // Act
+        var problems = graph.Validate();
+
+        // Assert
+        Assert.Single(problems);
+        Assert.Contains("cycle", problems[0]);
+    }
+
+    [Fact]
+    public void Validate_TriangleCycle_ReturnsCycleError()
+    {
+        // Arrange - Create a triangle cycle: A -> B -> C -> A
+        var graph = new AudioGraph();
+        var nodeA = graph.AddNode("A", new nint(1));
+        var nodeB = graph.AddNode("B", new nint(2));
+        var nodeC = graph.AddNode("C", new nint(3));
+        graph.Connect(nodeA, nodeB);
+        graph.Connect(nodeB, nodeC);
+        graph.Connect(nodeC, nodeA); // Create cycle
+
+        // Act
+        var problems = graph.Validate();
+
+        // Assert
+        Assert.Single(problems);
+        Assert.Contains("cycle", problems[0]);
+    }
 }

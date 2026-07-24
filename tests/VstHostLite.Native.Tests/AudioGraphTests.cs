@@ -528,4 +528,283 @@ public class AudioGraphTests
   var exception = Assert.Throws<InvalidOperationException>(() => graph.GetProcessingOrder());
   Assert.Contains("cycle", exception.Message);
  }
+
+    [Fact]
+    public void RemoveNode_WithMultipleIncomingConnections_CleansAllConnections()
+    {
+        // Arrange - Create a node with multiple incoming connections (fan-in)
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var node3 = graph.AddNode("node3", nint.Zero);
+        var node4 = graph.AddNode("node4", nint.Zero);
+
+        // node1 -> node4, node2 -> node4, node3 -> node4 (fan-in to node4)
+        graph.Connect(node1, node4);
+        graph.Connect(node2, node4);
+        graph.Connect(node3, node4);
+
+        // Act
+        graph.RemoveNode(node4);
+
+        // Assert - All previous nodes should have their Next cleared
+        Assert.Null(node1.Next);
+        Assert.Null(node2.Next);
+        Assert.Null(node3.Next);
+        Assert.Null(node4.Prev);
+        Assert.Null(node4.Next);
+    }
+
+    [Fact]
+    public void RemoveNode_WithMultipleOutgoingConnections_CleansAllConnections()
+    {
+        // Arrange - Create a node with multiple outgoing connections (fan-out)
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var node3 = graph.AddNode("node3", nint.Zero);
+        var node4 = graph.AddNode("node4", nint.Zero);
+
+        // node1 -> node2, node1 -> node3, node1 -> node4 (fan-out from node1)
+        graph.Connect(node1, node2);
+        graph.Connect(node1, node3);
+        graph.Connect(node1, node4);
+
+        // Act
+        graph.RemoveNode(node1);
+
+        // Assert - All next nodes should have their Prev cleared
+        Assert.Null(node2.Prev);
+        Assert.Null(node3.Prev);
+        Assert.Null(node4.Prev);
+        Assert.Null(node1.Prev);
+        Assert.Null(node1.Next);
+    }
+
+    [Fact]
+    public void RemoveNode_DoesNotThrowWhenNodeHasNoConnections()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var isolatedNode = new GraphNode("isolated", nint.Zero);
+        graph.AddNode(isolatedNode);
+
+        // Act - Should not throw
+        var exception = Record.Exception(() => graph.RemoveNode(isolatedNode));
+
+        // Assert
+        Assert.Null(exception);
+        Assert.Equal(2, graph.Nodes.Count); // Only node1 and node2 remain
+    }
+
+    [Fact]
+    public void RemoveNode_RemovesNodeFromNodesCollection()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var node3 = graph.AddNode("node3", nint.Zero);
+        graph.Connect(node1, node2);
+        graph.Connect(node2, node3);
+
+        // Act
+        graph.RemoveNode(node2);
+
+        // Assert - node2 should be completely removed from the collection
+        Assert.Equal(2, graph.Nodes.Count);
+        Assert.Contains(node1, graph.Nodes);
+        Assert.Contains(node3, graph.Nodes);
+        Assert.DoesNotContain(node2, graph.Nodes);
+    }
+
+    [Fact]
+    public void RemoveNode_UpdatesTopologyDirtyFlag()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        graph.Connect(node1, node2);
+
+        // Get initial processing order to mark topology as clean
+        var _ = graph.GetProcessingOrder();
+
+        // Act
+        graph.RemoveNode(node2);
+
+        // Assert - Topology should be marked as dirty
+        var processingOrder = graph.GetProcessingOrder();
+        Assert.Equal(1, processingOrder.Count);
+    }
+
+    [Fact]
+    public void GetProcessingOrder_DiamondTopology_ReturnsCorrectOrder()
+    {
+        // Arrange - Create a diamond topology: A -> B, A -> C, B -> D, C -> D
+        // Expected processing order: A, B, C, D (both B and C must process before D)
+        var graph = new AudioGraph();
+        var nodeA = graph.AddNode("A", nint.Zero);
+        var nodeB = graph.AddNode("B", nint.Zero);
+        var nodeC = graph.AddNode("C", nint.Zero);
+        var nodeD = graph.AddNode("D", nint.Zero);
+
+        graph.Connect(nodeA, nodeB);
+        graph.Connect(nodeA, nodeC);
+        graph.Connect(nodeB, nodeD);
+        graph.Connect(nodeC, nodeD);
+
+        // Act
+        var processingOrder = graph.GetProcessingOrder();
+
+        // Assert - Verify correct topological order
+        Assert.Equal(4, processingOrder.Count);
+        Assert.Equal(nodeA, processingOrder[0]);
+        Assert.Equal(nodeB, processingOrder[1]);
+        Assert.Equal(nodeC, processingOrder[2]);
+        Assert.Equal(nodeD, processingOrder[3]);
+
+        // Verify that D comes after both B and C
+        var indexOfD = processingOrder.ToList().IndexOf(nodeD);
+        var indexOfB = processingOrder.ToList().IndexOf(nodeB);
+        var indexOfC = processingOrder.ToList().IndexOf(nodeC);
+        Assert.True(indexOfB < indexOfD, "B should process before D");
+        Assert.True(indexOfC < indexOfD, "C should process before D");
+    }
+
+    [Fact]
+    public void GetProcessingOrder_ComplexTopology_ReturnsValidOrder()
+    {
+        // Arrange - Create a more complex topology
+        // A -> B -> C
+        // A -> D -> E
+        // B -> F -> E
+        var graph = new AudioGraph();
+        var nodeA = graph.AddNode("A", nint.Zero);
+        var nodeB = graph.AddNode("B", nint.Zero);
+        var nodeC = graph.AddNode("C", nint.Zero);
+        var nodeD = graph.AddNode("D", nint.Zero);
+        var nodeE = graph.AddNode("E", nint.Zero);
+        var nodeF = graph.AddNode("F", nint.Zero);
+
+        graph.Connect(nodeA, nodeB);
+        graph.Connect(nodeB, nodeC);
+        graph.Connect(nodeA, nodeD);
+        graph.Connect(nodeD, nodeE);
+        graph.Connect(nodeB, nodeF);
+        graph.Connect(nodeF, nodeE);
+
+        // Act
+        var processingOrder = graph.GetProcessingOrder();
+
+        // Assert - Verify all nodes are included
+        Assert.Equal(6, processingOrder.Count);
+
+        // Verify topological constraints
+        var indexOfA = processingOrder.ToList().IndexOf(nodeA);
+        var indexOfB = processingOrder.ToList().IndexOf(nodeB);
+        var indexOfC = processingOrder.ToList().IndexOf(nodeC);
+        var indexOfD = processingOrder.ToList().IndexOf(nodeD);
+        var indexOfE = processingOrder.ToList().IndexOf(nodeE);
+        var indexOfF = processingOrder.ToList().IndexOf(nodeF);
+
+        Assert.True(indexOfA < indexOfB, "A should process before B");
+        Assert.True(indexOfA < indexOfD, "A should process before D");
+        Assert.True(indexOfB < indexOfC, "B should process before C");
+        Assert.True(indexOfB < indexOfF, "B should process before F");
+        Assert.True(indexOfD < indexOfE, "D should process before E");
+        Assert.True(indexOfF < indexOfE, "F should process before E");
+    }
+
+    [Fact]
+    public void GetProcessingOrder_LinearChain_ReturnsNodesInOrder()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var node3 = graph.AddNode("node3", nint.Zero);
+        var node4 = graph.AddNode("node4", nint.Zero);
+        graph.Connect(node1, node2);
+        graph.Connect(node2, node3);
+        graph.Connect(node3, node4);
+
+        // Act
+        var processingOrder = graph.GetProcessingOrder();
+
+        // Assert
+        Assert.Equal(4, processingOrder.Count);
+        Assert.Equal(node1, processingOrder[0]);
+        Assert.Equal(node2, processingOrder[1]);
+        Assert.Equal(node3, processingOrder[2]);
+        Assert.Equal(node4, processingOrder[3]);
+    }
+
+    [Fact]
+    public void GetProcessingOrder_MultipleIndependentChains_ReturnsAllNodes()
+    {
+        // Arrange - Create two independent chains
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("chain1_node1", nint.Zero);
+        var node2 = graph.AddNode("chain1_node2", nint.Zero);
+        var node3 = graph.AddNode("chain2_node1", nint.Zero);
+        var node4 = graph.AddNode("chain2_node2", nint.Zero);
+        var node5 = graph.AddNode("chain2_node3", nint.Zero);
+
+        graph.Connect(node1, node2);
+        graph.Connect(node3, node4);
+        graph.Connect(node4, node5);
+
+        // Act
+        var processingOrder = graph.GetProcessingOrder();
+
+        // Assert
+        Assert.Equal(5, processingOrder.Count);
+
+        // Verify that nodes from different chains can be interleaved
+        // but all nodes are present
+        var names = processingOrder.Select(n => n.Name).ToList();
+        Assert.Contains("chain1_node1", names);
+        Assert.Contains("chain1_node2", names);
+        Assert.Contains("chain2_node1", names);
+        Assert.Contains("chain2_node2", names);
+        Assert.Contains("chain2_node3", names);
+    }
+
+    [Fact]
+    public void Connect_CreatesBidirectionalLinks()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var from = graph.AddNode("from", nint.Zero);
+        var to = graph.AddNode("to", nint.Zero);
+
+        // Act
+        graph.Connect(from, to);
+
+        // Assert - Both Next and Prev should be set
+        Assert.Equal(to, from.Next);
+        Assert.Equal(from, to.Prev);
+    }
+
+    [Fact]
+    public void Connect_MultipleTimes_OverwritesPreviousConnection()
+    {
+        // Arrange
+        var graph = new AudioGraph();
+        var node1 = graph.AddNode("node1", nint.Zero);
+        var node2 = graph.AddNode("node2", nint.Zero);
+        var node3 = graph.AddNode("node3", nint.Zero);
+        graph.Connect(node1, node2);
+
+        // Act - Connect node1 to node3 instead
+        graph.Connect(node1, node3);
+
+        // Assert - node1 now points to node3, not node2
+        Assert.Equal(node3, node1.Next);
+        Assert.Equal(node1, node3.Prev);
+        Assert.Null(node2.Prev); // Old connection is cleared
+    }
 }
