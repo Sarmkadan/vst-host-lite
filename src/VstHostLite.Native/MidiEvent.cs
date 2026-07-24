@@ -74,10 +74,27 @@ public readonly record struct MidiEvent(
 /// A thread-safe queue that stores MIDI events sorted by sample offset.
 /// Events can be dequeued up to a specific sample offset.
 /// </summary>
+/// <remarks>
+/// This queue includes bounds checking and DoS protection to prevent memory exhaustion
+/// from untrusted MIDI sources or malformed plugin callbacks.
+/// </remarks>
 public sealed class MidiEventQueue
 {
+    // Maximum capacity to prevent memory exhaustion from event floods
+    // Default of 16384 events (~128KB) balances memory usage with DoS protection
+    private const int DefaultCapacity = 16384;
+
+    // Overflow policy: when the queue is full, drop oldest events to make room
+    private const OverflowPolicy DefaultOverflowPolicy = OverflowPolicy.DropOldest;
+
     private readonly List<MidiEvent> _events = [];
     private readonly object _lock = new();
+    private readonly OverflowPolicy _overflowPolicy;
+
+    /// <summary>
+    /// Gets the maximum capacity of the queue.
+    /// </summary>
+    public int Capacity { get; }
 
     /// <summary>
     /// Gets the number of events currently in the queue.
@@ -94,13 +111,50 @@ public sealed class MidiEventQueue
     }
 
     /// <summary>
-    /// Enqueues a single MIDI event.
+    /// Initializes a new instance of the <see cref="MidiEventQueue"/> class.
     /// </summary>
-    /// <param name="e">The MIDI event to enqueue</param>
+    /// <param name="capacity">Maximum number of events the queue can hold. Must be positive.</param>
+    /// <param name="overflowPolicy">Policy for handling overflow when the queue is full.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when capacity is not positive.</exception>
+    public MidiEventQueue(int capacity = DefaultCapacity, OverflowPolicy overflowPolicy = DefaultOverflowPolicy)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(capacity, 0);
+
+        Capacity = capacity;
+        _overflowPolicy = overflowPolicy;
+    }
+
+    /// <summary>
+    /// Enqueues a single MIDI event after validating its fields.
+    /// </summary>
+    /// <param name="e">The MIDI event to enqueue.</param>
+    /// <exception cref="ArgumentNullException">Thrown when event is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when event fields are out of valid range.</exception>
     public void Enqueue(MidiEvent e)
     {
+        ArgumentNullException.ThrowIfNull(e);
+
+        ValidateMidiEvent(e);
+
         lock (_lock)
         {
+            // Apply overflow policy if queue is full
+            if (_events.Count >= Capacity)
+            {
+                switch (_overflowPolicy)
+                {
+                    case OverflowPolicy.DropOldest:
+                        _events.RemoveAt(0);
+                        break;
+                    case OverflowPolicy.DropNewest:
+                        return; // Drop the new event
+                    case OverflowPolicy.Throw:
+                        throw new InvalidOperationException($"MIDI event queue is full (capacity: {Capacity}).");
+                    default:
+                        throw new InvalidOperationException($"Unknown overflow policy: {_overflowPolicy}");
+                }
+            }
+
             // Insert the event in sorted order by sample offset
             int index = _events.BinarySearch(e, MidiEventComparer.Instance);
             if (index < 0)
@@ -112,15 +166,13 @@ public sealed class MidiEventQueue
     }
 
     /// <summary>
-    /// Enqueues multiple MIDI events.
+    /// Enqueues multiple MIDI events after validating each one.
     /// </summary>
-    /// <param name="events">The MIDI events to enqueue</param>
+    /// <param name="events">The MIDI events to enqueue.</param>
+    /// <exception cref="ArgumentNullException">Thrown when events is null.</exception>
     public void EnqueueRange(IEnumerable<MidiEvent> events)
     {
-        if (events is null)
-        {
-            return;
-        }
+        ArgumentNullException.ThrowIfNull(events);
 
         lock (_lock)
         {
@@ -171,6 +223,49 @@ public sealed class MidiEventQueue
     }
 
     /// <summary>
+    /// Validates that a MIDI event's fields are within their valid ranges.
+    /// </summary>
+    /// <param name="e">The event to validate.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when event fields are invalid.</exception>
+    private static void ValidateMidiEvent(MidiEvent e)
+    {
+        // MIDI channel: 0-15 (16 channels total)
+        // Status byte contains channel in lower 4 bits
+        if (e.Channel > 15)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(e),
+                $"MIDI channel must be between 0 and 15, got {e.Channel}.");
+        }
+
+        // Data1 contains note number for note events, controller number for CC events
+        // Must be 0-127 (7-bit MIDI data)
+        if (e.Data1 > 127)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(e.Data1),
+                $"MIDI data1 must be between 0 and 127, got {e.Data1}.");
+        }
+
+        // Data2 contains velocity for note events, value for CC events
+        // Must be 0-127 (7-bit MIDI data)
+        if (e.Data2 > 127)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(e.Data2),
+                $"MIDI data2 must be between 0 and 127, got {e.Data2}.");
+        }
+
+        // SampleOffset must be non-negative
+        if (e.SampleOffset < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(e.SampleOffset),
+                $"MIDI event sample offset must be non-negative, got {e.SampleOffset}.");
+        }
+    }
+
+    /// <summary>
     /// Gets the first event in the queue without removing it.
     /// </summary>
     /// <returns>The first event, or default if queue is empty</returns>
@@ -193,5 +288,29 @@ public sealed class MidiEventQueue
         {
             return x.SampleOffset.CompareTo(y.SampleOffset);
         }
+    }
+
+    /// <summary>
+    /// Policy for handling queue overflow when capacity is reached.
+    /// </summary>
+    public enum OverflowPolicy
+    {
+        /// <summary>
+        /// Drop the oldest event to make room for the new one.
+        /// This ensures newer events are prioritized and prevents memory exhaustion.
+        /// </summary>
+        DropOldest,
+
+        /// <summary>
+        /// Drop the newest event (do not enqueue it).
+        /// This preserves existing events and rejects new ones when full.
+        /// </summary>
+        DropNewest,
+
+        /// <summary>
+        /// Throw an exception when the queue is full.
+        /// This alerts the caller to the overflow condition for explicit handling.
+        /// </summary>
+        Throw
     }
 }
