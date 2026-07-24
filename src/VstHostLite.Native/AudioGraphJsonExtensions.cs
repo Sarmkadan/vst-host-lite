@@ -49,20 +49,11 @@ internal sealed class NintJsonConverter : JsonConverter<nint>
 }
 
 /// <summary>
-/// Provides JSON serialization helpers for <see cref="AudioGraph"/>.
+/// Provides JSON serialization helpers for <see cref="AudioGraph"/>, backed by the consolidated
+/// <see cref="Vst3HostJsonContext"/> source-generated serializer.
 /// </summary>
 public static class AudioGraphJsonExtensions
 {
-    /// <summary>
-    /// Cached JSON serializer options configured for camelCase property names.
-    /// </summary>
-    private static readonly JsonSerializerOptions _options = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false,
-        Converters = { new NintJsonConverter() }
-    };
-
     /// <summary>
     /// Serializes the <see cref="AudioGraph"/> instance to a JSON string.
     /// </summary>
@@ -74,19 +65,19 @@ public static class AudioGraphJsonExtensions
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var options = indented
-            ? new JsonSerializerOptions(_options) { WriteIndented = true }
-            : _options;
+        var context = indented
+            ? new Vst3HostJsonContext(new JsonSerializerOptions(Vst3HostJsonContext.Default.Options) { WriteIndented = true })
+            : Vst3HostJsonContext.Default;
 
         var nodesInOrder = value.GetNodesInOrder().ToList();
-        var dto = new AudioGraphDto(nodesInOrder.Select(node => new NodeDto
+        var dto = new AudioGraphDto(nodesInOrder.Select(node => new AudioGraphNodeDto
         {
             Name = node.Name,
             Component = node.Component,
             NextIndex = node.Next is { } next ? nodesInOrder.IndexOf(next) : -1
         }).ToList());
 
-        return JsonSerializer.Serialize(dto, options);
+        return JsonSerializer.Serialize(dto, context.AudioGraphDto);
     }
 
     /// <summary>
@@ -102,7 +93,7 @@ public static class AudioGraphJsonExtensions
         ArgumentNullException.ThrowIfNull(json);
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
-                var dto = JsonSerializer.Deserialize<AudioGraphDto>(json, _options)
+        var dto = JsonSerializer.Deserialize(json, Vst3HostJsonContext.Default.AudioGraphDto)
             ?? throw new JsonException("Deserialized AudioGraphDto is null.");
 
         if (dto.Nodes.Count == 0)
@@ -110,7 +101,7 @@ public static class AudioGraphJsonExtensions
             throw new JsonException("AudioGraphDto must contain at least one NodeDto.");
         }
 
-                var graph = new AudioGraph();
+        var graph = new AudioGraph();
         var nodes = new System.Collections.Generic.List<GraphNode>();
 
         // Create all nodes first
@@ -144,7 +135,7 @@ public static class AudioGraphJsonExtensions
     {
         ArgumentNullException.ThrowIfNull(json);
 
-                try
+        try
         {
             value = FromJson(json);
             return true;
@@ -154,26 +145,5 @@ public static class AudioGraphJsonExtensions
             value = null;
             return false;
         }
-    }
-
-    /// <summary>
-    /// Data transfer object used for JSON serialization and deserialization of <see cref="AudioGraph"/>.
-    /// </summary>
-    /// <param name="Nodes">The collection of node DTOs representing the audio graph structure.</param>
-    private sealed record AudioGraphDto(System.Collections.Generic.List<NodeDto> Nodes);
-
-    /// <summary>
-    /// Data transfer object for a single graph node.
-    /// </summary>
-    private sealed record NodeDto
-    {
-        /// <summary>Gets the name of the audio graph node.</summary>
-        public required string Name { get; init; }
-
-        /// <summary>Gets the component pointer associated with this node.</summary>
-        public required nint Component { get; init; }
-
-        /// <summary>Gets or sets the index of the next node in the graph, or -1 if this is the last node.</summary>
-        public int NextIndex { get; init; } = -1;
     }
 }
