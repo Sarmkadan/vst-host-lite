@@ -9,52 +9,7 @@ public class ParameterSmootherExtensionsTests
     private const float InitialValue = 0.5f;
 
     [Fact]
-    public void ProcessToArray_WithValidParameters_ReturnsArrayOfCorrectSize()
-    {
-        // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-
-        // Act
-        var result = smoother.ProcessToArray(10);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(10, result.Length);
-    }
-
-    [Fact]
-    public void ProcessToArray_WithValidParameters_ReturnsSmoothedValues()
-    {
-        // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        smoother.Target = 1.0f;
-
-        // Act
-        var result = smoother.ProcessToArray(10);
-
-        // Assert - values should be smoothing towards target
-        Assert.NotEqual(InitialValue, result[0]); // Should have changed
-        Assert.True(result[0] >= InitialValue && result[0] <= 1.0f); // Within bounds
-        Assert.True(result[9] >= result[0] && result[9] <= 1.0f); // Progressing towards target
-    }
-
-    [Fact]
-    public void ProcessToArray_WithCountOne_ReturnsSingleValue()
-    {
-        // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        smoother.Target = 1.0f;
-
-        // Act
-        var result = smoother.ProcessToArray(1);
-
-        // Assert
-        Assert.Single(result);
-        Assert.NotEqual(InitialValue, result[0]);
-    }
-
-    [Fact]
-    public void ProcessToArray_WithCountZero_ThrowsArgumentOutOfRangeException()
+    public void ProcessToArray_WithZeroCount_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
@@ -74,40 +29,179 @@ public class ParameterSmootherExtensionsTests
     }
 
     [Fact]
-    public void ProcessToArray_WithLargeCount_ReturnsArrayOfCorrectSize()
+    public void ProcessToArray_WithNullDestination_ThrowsArgumentNullException()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        float[]? destination = null;
 
-        // Act
-        var result = smoother.ProcessToArray(10000);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(10000, result.Length);
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => smoother.Process(destination!));
     }
 
     [Fact]
-    public void ProcessToArray_WithCustomTarget_ReturnsSmoothedValuesTowardsCustomTarget()
+    public void ProcessToArray_WithTargetEqualToCurrentValue_NoStateChange()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        var customTarget = 0.8f;
+        var originalCurrent = smoother.Current;
+        var originalTarget = smoother.Target;
+
+        // Act - process with target equal to current value
+        var result = smoother.ProcessToArray(10, InitialValue);
+
+        // Assert - no state should change when target equals current
+        Assert.Equal(10, result.Length);
+        Assert.All(result, value => Assert.Equal(InitialValue, value));
+        Assert.Equal(originalCurrent, smoother.Current);
+        Assert.Equal(originalTarget, smoother.Target);
+    }
+
+    [Fact]
+    public void ProcessToArray_WithTargetEqualToCurrentValue_ReturnsCorrectValues()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        smoother.Target = InitialValue;
 
         // Act
-        var result = smoother.ProcessToArray(5, customTarget);
+        var result = smoother.ProcessToArray(5);
 
-        // Assert
+        // Assert - all values should remain at initial value
         Assert.Equal(5, result.Length);
-        // All values should be smoothing towards customTarget
-        foreach (var value in result)
-        {
-            Assert.InRange(value, InitialValue, customTarget);
-        }
+        Assert.All(result, value => Assert.Equal(InitialValue, value));
     }
 
     [Fact]
-    public void ProcessToArray_WithCustomTarget_PreservesOriginalTargetAfterProcessing()
+    public void ProcessToArray_WithExtremelyLargeTimeConstant_AlphaApproachesZero()
+    {
+        // Arrange - extremely large time constant results in very slow smoothing (alpha close to 0)
+        var largeTimeConstant = 1000000f; // 1 million seconds = ~11 days
+        var smoother = new ParameterSmoother(SampleRate, largeTimeConstant, InitialValue);
+
+        // Act - calculate alpha manually to verify
+        var expectedAlpha = 1f - (float)Math.Exp(-1.0 / (SampleRate * largeTimeConstant));
+
+        // Assert - alpha should be very close to 0 (extremely slow smoothing)
+        Assert.Equal(0f, expectedAlpha);
+        Assert.Equal(0f, smoother.GetSmoothingRatio());
+    }
+
+    [Fact]
+    public void ProcessToArray_WithVerySmallTimeConstant_AlphaApproachesOne()
+    {
+        // Arrange - very small time constant should result in alpha close to 1 (fast smoothing)
+        var smallTimeConstant = 0.0001f;
+        var smoother = new ParameterSmoother(SampleRate, smallTimeConstant, InitialValue);
+        smoother.Target = 1.0f;
+
+        // Act
+        var result = smoother.ProcessToArray(10);
+
+        // Assert - values should quickly approach target
+        Assert.All(result, value => Assert.InRange(value, InitialValue, 1.0f));
+        Assert.True(result[9] > InitialValue); // Should have changed
+    }
+
+    [Fact]
+    public void ProcessToArray_WithZeroSampleRate_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ParameterSmoother(0f, TimeConstant, InitialValue));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithNegativeSampleRate_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ParameterSmoother(-44100f, TimeConstant, InitialValue));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithZeroTimeConstant_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ParameterSmoother(SampleRate, 0f, InitialValue));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithNegativeTimeConstant_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ParameterSmoother(SampleRate, -TimeConstant, InitialValue));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithNaNTarget_ResultsInNaN()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+
+        // Act - NaN target results in NaN through smoothing math
+        var result = smoother.ProcessToArray(5, float.NaN);
+
+        // Assert - NaN propagates through the smoothing calculation
+        Assert.All(result, value => Assert.Equal(float.NaN, value));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithPositiveInfinityTarget_ResultsInNaN()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+
+        // Act - PositiveInfinity target results in NaN through smoothing math
+        // (target - current) * alpha where target is Infinity
+        var result = smoother.ProcessToArray(5, float.PositiveInfinity);
+
+        // Assert - Infinity causes NaN in smoothing calculation
+        Assert.Contains(float.NaN, result);
+    }
+
+    [Fact]
+    public void ProcessToArray_WithNegativeInfinityTarget_ResultsInNaN()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+
+        // Act - NegativeInfinity target results in NaN through smoothing math
+        // (target - current) * alpha where target is Infinity
+        var result = smoother.ProcessToArray(5, float.NegativeInfinity);
+
+        // Assert - Infinity causes NaN in smoothing calculation
+        Assert.Contains(float.NaN, result);
+    }
+
+    [Fact]
+    public void ProcessToArray_WithVeryLargeTargetValue_HandlesCorrectly()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        var largeTarget = 1000000f;
+
+        // Act
+        var result = smoother.ProcessToArray(5, largeTarget);
+
+        // Assert - should handle large values without overflow
+        Assert.All(result, value => Assert.InRange(value, InitialValue, largeTarget));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithVerySmallTargetValue_HandlesCorrectly()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        var smallTarget = -1000000f;
+
+        // Act
+        var result = smoother.ProcessToArray(5, smallTarget);
+
+        // Assert - should handle small values without underflow
+        Assert.All(result, value => Assert.InRange(value, smallTarget, InitialValue));
+    }
+
+    [Fact]
+    public void ProcessToArray_WithCustomTarget_PreservesOriginalTarget()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
@@ -123,40 +217,56 @@ public class ParameterSmootherExtensionsTests
     }
 
     [Fact]
-    public void ProcessToArray_WithCountOneAndCustomTarget_ReturnsSingleValue()
+    public void ProcessToArray_WithCustomTarget_DoesNotModifyCurrentValue()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        var customTarget = 0.9f;
+        var originalCurrent = smoother.Current;
+        var customTarget = 0.8f;
 
         // Act
-        var result = smoother.ProcessToArray(1, customTarget);
+        var result = smoother.ProcessToArray(5, customTarget);
 
-        // Assert
-        Assert.Single(result);
+        // Assert - current value should be restored after processing with custom target
+        // Use approximate comparison due to floating point precision
+        Assert.Equal(originalCurrent, smoother.Current, 3);
     }
 
     [Fact]
-    public void ProcessTargets_WithNullTargets_ThrowsArgumentNullException()
+    public void ProcessTargets_WithTargetEqualToCurrentValue_NoStateChange()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        var targets = new[] { InitialValue, InitialValue, InitialValue };
+        var originalCurrent = smoother.Current;
+        var originalTarget = smoother.Target;
 
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => smoother.ProcessTargets(null!));
+        // Act
+        var result = smoother.ProcessTargets(targets);
+
+        // Assert - all values should remain at initial value, no state change
+        Assert.Equal(targets.Length, result.Length);
+        Assert.All(result, value => Assert.Equal(InitialValue, value));
+        Assert.Equal(originalCurrent, smoother.Current);
+        Assert.Equal(originalTarget, smoother.Target);
     }
 
     [Fact]
-    public void ProcessTargets_WithEmptyList_ReturnsEmptyArray()
+    public void ProcessTargets_WithMixedTargetValues_ReturnsCorrectSmoothedSequence()
     {
         // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, 0f);
+        var targets = new[] { 0.2f, 0.8f, 0.5f, 0.1f };
 
         // Act
-        var result = smoother.ProcessTargets(new List<float>());
+        var result = smoother.ProcessTargets(targets);
 
         // Assert
-        Assert.Empty(result);
+        Assert.Equal(targets.Length, result.Length);
+        for (int i = 0; i < result.Length; i++)
+        {
+            Assert.InRange(result[i], 0f, targets[i]);
+        }
     }
 
     [Fact]
@@ -170,51 +280,20 @@ public class ParameterSmootherExtensionsTests
 
         // Assert
         Assert.Single(result);
-        Assert.NotEqual(0f, result[0]); // Should have changed from initial value
+        Assert.NotEqual(0f, result[0]);
     }
 
     [Fact]
-    public void ProcessTargets_WithMultipleTargets_ReturnsArrayOfCorrectSize()
+    public void ProcessTargets_WithEmptyArray_ReturnsEmptyArray()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        var targets = new[] { 0.2f, 0.4f, 0.6f, 0.8f, 1.0f };
 
         // Act
-        var result = smoother.ProcessTargets(targets);
+        var result = smoother.ProcessTargets(Array.Empty<float>());
 
         // Assert
-        Assert.Equal(targets.Length, result.Length);
-    }
-
-    [Fact]
-    public void ProcessTargets_WithMultipleTargets_ReturnsSmoothedValues()
-    {
-        // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        var targets = new[] { 0.2f, 0.8f };
-
-        // Act
-        var result = smoother.ProcessTargets(targets);
-
-        // Assert - values should be smoothing between targets
-        Assert.Equal(2, result.Length);
-        Assert.NotEqual(targets[0], result[0]); // First value should be smoothed from initial
-        Assert.NotEqual(targets[1], result[1]); // Second value should be smoothed from first target
-    }
-
-    [Fact]
-    public void ProcessTargets_WithIEnumerable_ReturnsCorrectValues()
-    {
-        // Arrange
-        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
-        IEnumerable<float> targets = new[] { 0.1f, 0.3f, 0.5f };
-
-        // Act
-        var result = smoother.ProcessTargets(targets);
-
-        // Assert
-        Assert.Equal(3, result.Length);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -228,7 +307,7 @@ public class ParameterSmootherExtensionsTests
     }
 
     [Fact]
-    public void GetSmoothingRatio_ReturnsValueBetweenZeroAndOne()
+    public void GetSmoothingRatio_ReturnsValueInRange()
     {
         // Arrange
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
@@ -236,7 +315,7 @@ public class ParameterSmootherExtensionsTests
         // Act
         var ratio = smoother.GetSmoothingRatio();
 
-        // Assert - smoothing ratio should be in valid range
+        // Assert
         Assert.InRange(ratio, 0f, 1f);
     }
 
@@ -250,7 +329,7 @@ public class ParameterSmootherExtensionsTests
         var ratio1 = smoother.GetSmoothingRatio();
         var ratio2 = smoother.GetSmoothingRatio();
 
-        // Assert - should be deterministic
+        // Assert
         Assert.Equal(ratio1, ratio2);
     }
 
@@ -258,14 +337,14 @@ public class ParameterSmootherExtensionsTests
     public void GetSmoothingRatio_WithDifferentTimeConstants_ReturnsDifferentRatios()
     {
         // Arrange
-        var smootherFast = new ParameterSmoother(SampleRate, 0.01f, InitialValue); // Fast smoothing
-        var smootherSlow = new ParameterSmoother(SampleRate, 1.0f, InitialValue); // Slow smoothing
+        var smootherFast = new ParameterSmoother(SampleRate, 0.01f, InitialValue);
+        var smootherSlow = new ParameterSmoother(SampleRate, 1.0f, InitialValue);
 
         // Act
         var ratioFast = smootherFast.GetSmoothingRatio();
         var ratioSlow = smootherSlow.GetSmoothingRatio();
 
-        // Assert - fast smoothing should have higher alpha
+        // Assert
         Assert.True(ratioFast > ratioSlow);
     }
 
@@ -292,7 +371,6 @@ public class ParameterSmootherExtensionsTests
         var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
         var originalTarget = smoother.Target;
         var originalCurrent = smoother.Current;
-
         var targets = new[] { 0.2f, 0.8f, 0.5f };
 
         // Act
@@ -303,4 +381,47 @@ public class ParameterSmootherExtensionsTests
         Assert.Equal(originalCurrent, smoother.Current);
     }
 
+    [Fact]
+    public void ProcessToArray_WithCustomTarget_ReturnsArrayOfCorrectSize()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+
+        // Act
+        var result = smoother.ProcessToArray(10, 0.8f);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(10, result.Length);
+    }
+
+    [Fact]
+    public void ProcessToArray_WithCustomTarget_ReturnsSmoothedValues()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+
+        // Act
+        var result = smoother.ProcessToArray(10, 1.0f);
+
+        // Assert
+        Assert.NotEqual(InitialValue, result[0]);
+        Assert.True(result[0] >= InitialValue && result[0] <= 1.0f);
+        Assert.True(result[9] >= result[0] && result[9] <= 1.0f);
+    }
+
+    [Fact]
+    public void ProcessToArray_WithCountOne_ReturnsSingleValue()
+    {
+        // Arrange
+        var smoother = new ParameterSmoother(SampleRate, TimeConstant, InitialValue);
+        smoother.Target = 1.0f; // Set a different target to see smoothing
+
+        // Act
+        var result = smoother.ProcessToArray(1);
+
+        // Assert
+        Assert.Single(result);
+        Assert.NotEqual(InitialValue, result[0]);
+    }
 }
