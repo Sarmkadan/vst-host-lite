@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-A simple build command script for the VstHostLite repository.
+aider_buildcmd.py
 
-Running this script will:
-1. Restore NuGet packages (`dotnet restore`).
-2. Execute the unit test suite (`dotnet test`).
+A simple helper script used by the Aider toolchain to build and test the
+VstHostLite.Native project. It runs `dotnet test` in the repository root and
+exits with the same return code as the test runner.
 
-It is intended to be invoked from the repository root, but the script
-automatically determines the correct working directory based on its own
-location, so it works regardless of the current working directory.
+If additional build steps are required they can be added to the `main`
+function.
 """
 
 import subprocess
@@ -17,35 +16,48 @@ from pathlib import Path
 
 
 def _run_command(command: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    """Run a command via subprocess, forwarding stdout/stderr."""
-    return subprocess.run(
-        command,
-        cwd=cwd,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        check=False,
-        text=True,
-    )
+    """
+    Execute a command in a subprocess, forwarding stdout and stderr.
+
+    Args:
+        command: The command and its arguments to execute.
+        cwd: The working directory for the command.
+
+    Returns:
+        The CompletedProcess instance containing the execution result.
+    """
+    try:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+        # Echo the output so the caller sees the test results.
+        sys.stdout.write(result.stdout)
+        return result
+    except Exception as exc:
+        sys.stderr.write(f"Error running command {' '.join(command)}: {exc}\n")
+        raise
 
 
 def main() -> None:
-    # Determine the repository root (the directory containing this script)
+    """
+    Entry point for the build command.
+
+    It runs `dotnet test` against the solution located in the repository root.
+    """
     repo_root = Path(__file__).resolve().parent
+    # Adjust the path if the solution file is in a subdirectory; for this repo
+    # the tests are under `tests/` and the project files are under `src/`.
+    # `dotnet test` will discover the test projects automatically.
+    command = ["dotnet", "test", "--no-build", "--verbosity", "minimal"]
+    result = _run_command(command, cwd=repo_root)
 
-    # 1. Restore packages
-    restore_result = _run_command(["dotnet", "restore"], cwd=repo_root)
-    if restore_result.returncode != 0:
-        print("dotnet restore failed.", file=sys.stderr)
-        sys.exit(restore_result.returncode)
-
-    # 2. Run tests (skip restore because we already did it)
-    test_result = _run_command(
-        ["dotnet", "test", "--no-restore", "--verbosity", "minimal"], cwd=repo_root
-    )
-    if test_result.returncode != 0:
-        print("dotnet test failed.", file=sys.stderr)
-
-    sys.exit(test_result.returncode)
+    # Propagate the exit code from the test runner.
+    sys.exit(result.returncode)
 
 
 if __name__ == "__main__":

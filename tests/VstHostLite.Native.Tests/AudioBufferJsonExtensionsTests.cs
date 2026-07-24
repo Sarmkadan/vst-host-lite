@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Text.Json;
 using Xunit;
 using VstHostLite.Native;
@@ -8,13 +9,35 @@ namespace VstHostLite.Native.Tests;
 public class AudioBufferJsonExtensionsTests
 {
     // Helper to create a simple AudioBuffer instance.
-    // The actual AudioBuffer type may have many properties; we only need a
-    // default instance that can be serialized/deserialized.
+    // Uses reflection to instantiate the type even if it only has non‑public constructors.
     private static AudioBuffer CreateSampleBuffer()
     {
-        // Assuming AudioBuffer has a public parameterless constructor.
-        // If it has required properties, they can be set here.
-        return new AudioBuffer();
+        // Try to create an instance via the public parameterless constructor.
+        // If that does not exist, fall back to a non‑public constructor using Activator.
+        var ctor = typeof(AudioBuffer).GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            Type.EmptyTypes,
+            modifiers: null);
+
+        if (ctor != null)
+        {
+            return (AudioBuffer)ctor.Invoke(null);
+        }
+
+        // No public parameterless ctor – use the non‑public one.
+        var nonPublicCtor = typeof(AudioBuffer).GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null,
+            Type.EmptyTypes,
+            modifiers: null);
+
+        if (nonPublicCtor == null)
+        {
+            throw new InvalidOperationException("AudioBuffer does not have a parameterless constructor.");
+        }
+
+        return (AudioBuffer)nonPublicCtor.Invoke(null);
     }
 
     [Fact]
