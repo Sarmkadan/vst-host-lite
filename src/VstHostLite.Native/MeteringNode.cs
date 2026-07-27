@@ -39,9 +39,10 @@ public sealed class MeteringNode
     /// </summary>
     /// <param name="buffer">Interleaved audio samples (length must be a multiple of the channel count).</param>
     /// <exception cref="ArgumentException">If <paramref name="buffer"/> length is not a multiple of the channel count.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="buffer"/> is null.</exception>
     public void Process(float[] buffer)
     {
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+        ArgumentNullException.ThrowIfNull(buffer);
         if (buffer.Length % _channelCount != 0)
             throw new ArgumentException("Buffer length must be a multiple of the channel count.", nameof(buffer));
 
