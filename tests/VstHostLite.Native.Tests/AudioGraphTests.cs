@@ -3,7 +3,7 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
-public class AudioGraphTests
+public class AudioGraphTests : IAudioGraphTests
 {
  [Fact]
  public void Merge_ThrowsOnNullOtherGraph()
