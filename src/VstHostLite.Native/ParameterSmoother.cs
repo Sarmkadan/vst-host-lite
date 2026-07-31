@@ -6,7 +6,7 @@ namespace VstHostLite.Native
     /// Smooths a parameter value towards a target using exponential smoothing.
     /// The smoothing speed is defined by a time constant (in seconds) and the sample rate.
     /// </summary>
-    public sealed class ParameterSmoother
+    public sealed class ParameterSmoother : IParameterSmoother
     {
         private readonly float _sampleRate;
         private readonly float _timeConstantSeconds;
