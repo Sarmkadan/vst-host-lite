@@ -78,7 +78,7 @@ public readonly record struct MidiEvent(
 /// This queue includes bounds checking and DoS protection to prevent memory exhaustion
 /// from untrusted MIDI sources or malformed plugin callbacks.
 /// </remarks>
-public sealed class MidiEventQueue
+public sealed class MidiEventQueue : IMidiEventQueue
 {
     // Maximum capacity to prevent memory exhaustion from event floods
     // Default of 16384 events (~128KB) balances memory usage with DoS protection
