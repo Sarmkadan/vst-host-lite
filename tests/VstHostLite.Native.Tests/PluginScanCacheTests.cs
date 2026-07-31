@@ -3,7 +3,7 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
-public class PluginScanCacheTests
+public class PluginScanCacheTests : IPluginScanCacheTests
 {
     [Fact]
     public void TryGetFresh_ReturnsFalse_WhenPluginDoesNotExist()
