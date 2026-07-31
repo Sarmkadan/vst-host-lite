@@ -4,7 +4,7 @@ using Xunit;
 
 namespace VstHostLite.Cli.Tests;
 
-public class CliArgsTests
+public class CliArgsTests : ICliArgsTests
 {
     [Fact]
     public void NoArguments_PrintsUsageAndReturns1()
