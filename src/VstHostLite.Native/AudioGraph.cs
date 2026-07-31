@@ -11,7 +11,7 @@ namespace VstHostLite.Native;
 /// but wiring IAudioProcessor::process with the right ProcessData/AudioBusBuffers
 /// marshalling always crashed or produced silence.
 /// </summary>
-public sealed class AudioGraph
+public sealed class AudioGraph : IAudioGraph
 {
     private readonly List<GraphNode> _nodes = new();
     private readonly List<GraphNode> _processingOrder = new();
