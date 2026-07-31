@@ -9,7 +9,7 @@ namespace VstHostLite.Native;
 /// This node follows the same conventions as <see cref="MixerNode"/> and can
 /// be added to an <see cref="AudioGraph"/> via custom handling if required.
 /// </summary>
-public sealed class NoiseGeneratorNode
+public sealed class NoiseGeneratorNode : INoiseGeneratorNode
 {
     private readonly Random _random;
     private readonly int _frames;
@@ -56,6 +56,11 @@ public sealed class NoiseGeneratorNode
     }
 
     /// <summary>
+    /// Gets the number of frames per buffer for this node.
+    /// </summary>
+    public int Frames => _frames;
+
+    /// <summary>
     /// Generates a block of white noise into the provided output buffer.
     /// </summary>
     /// <param name="output">
@@ -81,9 +86,4 @@ public sealed class NoiseGeneratorNode
             output[i] = (float)(sample * _amplitude);
         }
     }
-
-    /// <summary>
-    /// Gets the number of frames per buffer for this node.
-    /// </summary>
-    public int Frames => _frames;
 }
