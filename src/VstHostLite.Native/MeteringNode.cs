@@ -10,7 +10,7 @@ namespace VstHostLite.Native;
 /// The current statistics can be obtained via the <see cref="CurrentMetering"/>
 /// property, which returns a <see cref="Metering"/> record.
 /// </summary>
-public sealed class MeteringNode
+public sealed class MeteringNode : IMeteringNode
 {
     private readonly int _channelCount;
     private readonly float[] _peak;          // per‑channel maximum absolute value
