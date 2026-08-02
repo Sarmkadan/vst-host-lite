@@ -4,7 +4,7 @@ namespace VstHostLite.Native;
 /// A delay node that implements a circular-buffer delay line with configurable delay time, feedback, and dry/wet mix.
 /// This is a processing node that can be added to the audio graph.
 /// </summary>
-public sealed class DelayNode
+public sealed class DelayNode : IEquatable<DelayNode>
 {
     private readonly int _maxDelaySamples;
     private readonly int _frames;
@@ -172,5 +172,38 @@ public sealed class DelayNode
     {
         Array.Clear(_delayBuffer, 0, _delayBuffer.Length);
         _writeIndex = 0;
+    }
+
+    public bool Equals(DelayNode? other)
+    {
+        if (other is null)
+            return false;
+
+        return _maxDelaySamples == other._maxDelaySamples &&
+               _frames == other._frames &&
+               _delayBuffer.SequenceEqual(other._delayBuffer) &&
+               _writeIndex == other._writeIndex &&
+               _feedback == other._feedback &&
+               _dryWetMix == other._dryWetMix;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as DelayNode);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_maxDelaySamples, _frames, _delayBuffer, _writeIndex, _feedback, _dryWetMix);
+    }
+
+    public static bool operator ==(DelayNode? left, DelayNode? right)
+    {
+        return EqualityComparer<DelayNode>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(DelayNode? left, DelayNode? right)
+    {
+        return !(left == right);
     }
 }
