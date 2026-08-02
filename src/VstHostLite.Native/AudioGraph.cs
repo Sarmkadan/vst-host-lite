@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace VstHostLite.Native;
 
@@ -54,7 +53,12 @@ public sealed class AudioGraph : IAudioGraph
     public IReadOnlyList<int> GetProcessingOrderIds()
     {
         var order = GetProcessingOrder();
-        return order.Select(n => Array.IndexOf(_nodes.ToArray(), n)).ToList().AsReadOnly();
+        var ids = new List<int>(order.Count);
+        foreach (var n in order)
+        {
+            ids.Add(_nodes.IndexOf(n));
+        }
+        return ids.AsReadOnly();
     }
 
     private void ComputeTopologicalOrder()
@@ -83,8 +87,6 @@ public sealed class AudioGraph : IAudioGraph
         }
 
         // Find all nodes with zero in-degree
-        // Use a list and always pick the node with the smallest index in _nodes
-        // to maintain insertion order for nodes with same in-degree
         var availableNodes = new List<GraphNode>();
         foreach (var node in _nodes)
         {
@@ -98,7 +100,21 @@ public sealed class AudioGraph : IAudioGraph
         while (availableNodes.Count > 0)
         {
             // Find the node with the smallest index in _nodes
-            var nodeToProcess = availableNodes.OrderBy(node => Array.IndexOf(_nodes.ToArray(), node)).First();
+            GraphNode nodeToProcess = null;
+            int minIdx = int.MaxValue;
+            foreach (var candidate in availableNodes)
+            {
+                int idx = _nodes.IndexOf(candidate);
+                if (idx < minIdx)
+                {
+                    minIdx = idx;
+                    nodeToProcess = candidate;
+                }
+            }
+
+            if (nodeToProcess == null)
+                break; // should not happen
+
             availableNodes.Remove(nodeToProcess);
             _processingOrder.Add(nodeToProcess);
 
@@ -191,7 +207,13 @@ public sealed class AudioGraph : IAudioGraph
         }
 
         // If we couldn't find a cycle with DFS, return nodes that weren't processed
-        return _nodes.Where(n => !_processingOrder.Contains(n)).ToList();
+        var unprocessed = new List<GraphNode>();
+        foreach (var n in _nodes)
+        {
+            if (!_processingOrder.Contains(n))
+                unprocessed.Add(n);
+        }
+        return unprocessed;
     }
 
     private string FormatCyclePath(List<GraphNode> cyclePath)
@@ -201,7 +223,11 @@ public sealed class AudioGraph : IAudioGraph
             return "unknown cycle";
         }
 
-        var nodeIds = cyclePath.Select(n => Array.IndexOf(_nodes.ToArray(), n)).ToList();
+        var nodeIds = new List<int>(cyclePath.Count);
+        foreach (var n in cyclePath)
+        {
+            nodeIds.Add(_nodes.IndexOf(n));
+        }
         return $"[{string.Join(" → ", nodeIds)}]";
     }
 
@@ -218,7 +244,12 @@ public sealed class AudioGraph : IAudioGraph
         ArgumentException.ThrowIfNullOrEmpty(idPrefix);
 
         // Check for collisions after prefixing
-        var existingNames = new HashSet<string>(_nodes.Select(n => n.Name));
+        var existingNames = new HashSet<string>();
+        foreach (var n in _nodes)
+        {
+            existingNames.Add(n.Name);
+        }
+
         foreach (var node in other._nodes)
         {
             var prefixedName = idPrefix + node.Name;
