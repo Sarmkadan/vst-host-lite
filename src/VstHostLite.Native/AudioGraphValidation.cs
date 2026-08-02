@@ -10,10 +10,15 @@ public static class AudioGraphValidation
     /// </summary>
     /// <param name="value">The audio graph to validate.</param>
     /// <returns>An enumerable of validation problems; empty if the graph is valid.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null or its node collection is null.</exception>
     public static IReadOnlyList<string> Validate(this AudioGraph? value)
     {
         ArgumentNullException.ThrowIfNull(value);
+        // Guard against a null Nodes collection
+        if (value.Nodes == null)
+        {
+            throw new ArgumentNullException(nameof(value.Nodes));
+        }
 
         var problems = new List<string>();
 
@@ -40,19 +45,31 @@ public static class AudioGraphValidation
     /// </summary>
     /// <param name="value">The audio graph to check.</param>
     /// <returns>True if the graph is valid; otherwise, false.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null or its node collection is null.</exception>
     public static bool IsValid(this AudioGraph? value)
-        => Validate(value).Count == 0;
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        if (value.Nodes == null)
+        {
+            throw new ArgumentNullException(nameof(value.Nodes));
+        }
+
+        return Validate(value).Count == 0;
+    }
 
     /// <summary>
     /// Ensures that an <see cref="AudioGraph"/> instance is valid, throwing an exception if it is not.
     /// </summary>
     /// <param name="value">The audio graph to validate.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null or its node collection is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the graph contains validation problems.</exception>
     public static void EnsureValid(this AudioGraph? value)
     {
         ArgumentNullException.ThrowIfNull(value);
+        if (value.Nodes == null)
+        {
+            throw new ArgumentNullException(nameof(value.Nodes));
+        }
 
         var problems = Validate(value);
         if (problems.Count > 0)
