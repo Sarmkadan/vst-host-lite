@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -34,7 +37,7 @@ internal sealed class NintJsonConverter : JsonConverter<nint>
             hexString = hexString.Substring(2);
         }
 
-        if (ulong.TryParse(hexString, System.Globalization.NumberStyles.HexNumber, null, out ulong ulongValue))
+        if (ulong.TryParse(hexString, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong ulongValue))
         {
             return (nint)ulongValue;
         }
@@ -44,7 +47,7 @@ internal sealed class NintJsonConverter : JsonConverter<nint>
 
     public override void Write(Utf8JsonWriter writer, nint value, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(value.ToString("X"));
+        writer.WriteStringValue(value.ToString("X", CultureInfo.InvariantCulture));
     }
 }
 
@@ -102,7 +105,7 @@ public static class AudioGraphJsonExtensions
         }
 
         var graph = new AudioGraph();
-        var nodes = new System.Collections.Generic.List<GraphNode>();
+        var nodes = new List<GraphNode>();
 
         // Create all nodes first
         foreach (var nodeDto in dto.Nodes)
