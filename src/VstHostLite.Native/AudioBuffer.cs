@@ -40,6 +40,8 @@ public class AudioBuffer
         return (float[])buffer.Clone();
     }
 
+    public Span<float> AsSpan() => buffer;
+
     public static AudioBuffer Interleave(AudioBuffer buffer1, AudioBuffer buffer2)
     {
         if (buffer1.Channels != buffer2.Channels)

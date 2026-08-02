@@ -48,9 +48,33 @@ namespace VstHostLite.Native
             int availableFrames = buffer.Frames - targetFrameOffset;
             int framesToCopy = Math.Min(source.Frames, availableFrames);
 
+            Span<float> bufferSpan = buffer.AsSpan();
+            ReadOnlySpan<float> sourceSpan = source.AsSpan();
+            int channels = buffer.Channels;
+
             for (int i = 0; i < framesToCopy; i++)
             {
-                buffer[targetChannel, targetFrameOffset + i] = source[i, 0];
+                bufferSpan[(targetFrameOffset + i) * channels + targetChannel] = sourceSpan[i];
+            }
+        }
+
+        public static void CopyToChannel(this Span<float> buffer, int channels, ReadOnlySpan<float> source, int targetChannel, int targetFrameOffset = 0)
+        {
+            int frames = buffer.Length / channels;
+            int availableFrames = frames - targetFrameOffset;
+            int framesToCopy = Math.Min(source.Length, availableFrames);
+
+            for (int i = 0; i < framesToCopy; i++)
+            {
+                buffer[(targetFrameOffset + i) * channels + targetChannel] = source[i];
+            }
+        }
+
+        public static void MixWith(this Span<float> buffer, ReadOnlySpan<float> other, float mixFactor = 1.0f)
+        {
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] += other[i] * mixFactor;
             }
         }
 
@@ -94,12 +118,12 @@ namespace VstHostLite.Native
             if (mixFactor < 0.0f || mixFactor > 1.0f)
                 throw new ArgumentException("Mix factor must be between 0.0 and 1.0", nameof(mixFactor));
 
-            float[] otherSamples = other.ToFlatArray();
-            float[] thisSamples = buffer.ToFlatArray();
+            Span<float> thisSpan = buffer.AsSpan();
+            ReadOnlySpan<float> otherSpan = other.AsSpan();
 
-            for (int i = 0; i < thisSamples.Length; i++)
+            for (int i = 0; i < thisSpan.Length; i++)
             {
-                thisSamples[i] += otherSamples[i] * mixFactor;
+                thisSpan[i] += otherSpan[i] * mixFactor;
             }
         }
     }
