@@ -10,7 +10,7 @@ namespace VstHostLite.Native;
 /// we walk the vtable manually because the interfaces are C++ and there is no
 /// stable C surface. This is only the bits we needed to enumerate a factory.
 /// </summary>
-public static class Vst3Interop
+public class Vst3Interop : IEquatable<Vst3Interop>
 {
     // VST3 result codes
     public const int kResultOk = 0;
@@ -275,6 +275,41 @@ public static class Vst3Interop
         public byte[] Category;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
         public byte[] Name;
+    }
+
+    // ------------------------------------------------------------------------
+    // Equality members for Vst3Interop
+    // ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Determines whether the specified <see cref="Vst3Interop"/> is equal to the current instance.
+    /// Since the class has no instance state, all non‑null instances are considered equal.
+    /// </summary>
+    public bool Equals(Vst3Interop? other)
+    {
+        // All instances are effectively the same because there are no instance fields.
+        return other is not null;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as Vst3Interop);
+    }
+
+    public override int GetHashCode()
+    {
+        // Use the type itself for hashing; all instances share the same hash code.
+        return HashCode.Combine(typeof(Vst3Interop));
+    }
+
+    public static bool operator ==(Vst3Interop? left, Vst3Interop? right)
+    {
+        return EqualityComparer<Vst3Interop>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(Vst3Interop? left, Vst3Interop? right)
+    {
+        return !(left == right);
     }
 }
 
