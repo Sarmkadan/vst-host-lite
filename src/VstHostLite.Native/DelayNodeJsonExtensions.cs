@@ -24,6 +24,7 @@ public static class DelayNodeJsonExtensions
     /// <param name="indented">Whether to format the JSON with indentation for readability</param>
     /// <returns>A JSON string representation of the delay node</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
+    /// <exception cref="JsonException">Thrown if there is an error serializing the JSON</exception>
     public static string ToJson(this DelayNode value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -39,7 +40,7 @@ public static class DelayNodeJsonExtensions
     /// Deserializes a JSON string to a <see cref="DelayNode"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
-    /// <returns>A deserialized <see cref="DelayNode"/> instance, or null if the JSON is empty</returns>
+    /// <returns>A deserialized <see cref="DelayNode"/> instance, or null if the JSON is empty or whitespace</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null</exception>
     /// <exception cref="JsonException">Thrown if the JSON is invalid or cannot be deserialized</exception>
     public static DelayNode? FromJson(string json)
@@ -59,7 +60,7 @@ public static class DelayNodeJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
     /// <param name="value">Receives the deserialized <see cref="DelayNode"/> instance, or null if deserialization fails</param>
-    /// <returns>True if deserialization succeeds; otherwise, false</returns>
+    /// <returns>True if deserialization succeeds; otherwise, false (including if the JSON is empty or whitespace)</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null</exception>
     public static bool TryFromJson(string json, out DelayNode? value)
     {
