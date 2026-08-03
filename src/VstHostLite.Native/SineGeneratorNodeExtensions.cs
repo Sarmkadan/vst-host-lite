@@ -22,9 +22,7 @@ public static class SineGeneratorNodeExtensions
         node.Frequency = frequency;
     }
 
-    /// <summary>
-    /// Generates a sine wave with the specified frequency and amplitude, returning the result as an array.
-    /// </summary>
+    /// <summary>Generates a sine wave with the specified frequency and amplitude, returning the result as an array.</summary>
     /// <param name="node">The sine generator node</param>
     /// <param name="frequency">Frequency in Hz</param>
     /// <param name="amplitude">Amplitude between 0.0 and 1.0</param>
@@ -65,9 +63,7 @@ public static class SineGeneratorNodeExtensions
         }
     }
 
-    /// <summary>
-    /// Generates a sine wave with the specified frequency and amplitude, returning the result as an array.
-    /// </summary>
+    /// <summary>Generates a sine wave with the specified frequency and amplitude, returning the result as an array.</summary>
     /// <param name="node">The sine generator node</param>
     /// <param name="noteName">Note name in scientific pitch notation</param>
     /// <param name="amplitude">Amplitude between 0.0 and 1.0</param>
