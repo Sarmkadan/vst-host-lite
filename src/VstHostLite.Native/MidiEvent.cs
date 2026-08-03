@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+
 namespace VstHostLite.Native;
 
 /// <summary>
@@ -78,7 +83,7 @@ public readonly record struct MidiEvent(
 /// This queue includes bounds checking and DoS protection to prevent memory exhaustion
 /// from untrusted MIDI sources or malformed plugin callbacks.
 /// </remarks>
-public sealed class MidiEventQueue : IMidiEventQueue
+public sealed class MidiEventQueue : IMidiEventQueue, IEquatable<MidiEventQueue>
 {
     // Maximum capacity to prevent memory exhaustion from event floods
     // Default of 16384 events (~128KB) balances memory usage with DoS protection
@@ -313,4 +318,63 @@ public sealed class MidiEventQueue : IMidiEventQueue
         /// </summary>
         Throw
     }
+
+    // ------------------------------------------------------------------------
+    // Equality members
+    // ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Determines whether this instance is equal to another <see cref="MidiEventQueue"/>.
+    /// Equality is based on <see cref="Capacity"/>, the configured <see cref="OverflowPolicy"/>,
+    /// and the sequence of queued <see cref="MidiEvent"/> items.
+    /// </summary>
+    public bool Equals(MidiEventQueue? other)
+    {
+        if (ReferenceEquals(this, other))
+            return true;
+        if (other is null)
+            return false;
+
+        // Lock both queues in a deterministic order to avoid deadlocks.
+        // Use the hash code of the objects to decide lock order.
+        var first = this;
+        var second = other;
+        if (RuntimeHelpers.GetHashCode(first) > RuntimeHelpers.GetHashCode(second))
+        {
+            (first, second) = (second, first);
+        }
+
+        lock (first._lock)
+        {
+            lock (second._lock)
+            {
+                if (Capacity != other.Capacity)
+                    return false;
+                if (_overflowPolicy != other._overflowPolicy)
+                    return false;
+                if (_events.Count != other._events.Count)
+                    return false;
+                return _events.SequenceEqual(other._events);
+            }
+        }
+    }
+
+    public override bool Equals(object? obj) => obj is MidiEventQueue other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(Capacity);
+        hash.Add(_overflowPolicy);
+        foreach (var ev in _events)
+        {
+            hash.Add(ev);
+        }
+        return hash.ToHashCode();
+    }
+
+    public static bool operator ==(MidiEventQueue? left, MidiEventQueue? right) =>
+        EqualityComparer<MidiEventQueue>.Default.Equals(left, right);
+
+    public static bool operator !=(MidiEventQueue? left, MidiEventQueue? right) => !(left == right);
 }
