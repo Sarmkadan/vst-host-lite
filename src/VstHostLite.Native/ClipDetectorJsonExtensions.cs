@@ -17,18 +17,15 @@ public static class ClipDetectorJsonExtensions
     /// <summary>
     /// Serializes a <see cref="ClipDetectionResult"/> instance to a JSON string.
     /// </summary>
-    /// <param name="value">The clip detection result to serialize</param>
+    /// <param name="value">The clip detection result to serialize. Can be null.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability</param>
-    /// <returns>A JSON string representation of the clip detection result</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
+    /// <returns>A JSON string representation of the clip detection result, or null if <paramref name="value"/> is null</returns>
     public static string ToJson(this ClipDetectionResult value, bool indented = false)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        if (value == null)
+            return null;
 
-        var options = indented
-            ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
-            : _jsonOptions;
-
+        var options = indented ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true } : _jsonOptions;
         return JsonSerializer.Serialize(value, options);
     }
 
