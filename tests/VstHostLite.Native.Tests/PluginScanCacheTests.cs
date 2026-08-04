@@ -3,8 +3,15 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+/// <summary>
+/// Contains unit tests for the <see cref="PluginScanCache"/> class.
+/// </summary>
 public class PluginScanCacheTests : IPluginScanCacheTests
 {
+    /// <summary>
+    /// Verifies that <see cref="PluginScanCache.TryGetFresh"/> returns false and a null result
+    /// when the specified plugin path does not exist.
+    /// </summary>
     [Fact]
     public void TryGetFresh_ReturnsFalse_WhenPluginDoesNotExist()
     {
@@ -19,6 +26,10 @@ public class PluginScanCacheTests : IPluginScanCacheTests
         Assert.Null(cachedInfo);
     }
 
+    /// <summary>
+    /// Tests that saving plugin information to the cache and retrieving it using
+    /// <see cref="PluginScanCache.TryGetFresh"/> preserves the data correctly.
+    /// </summary>
     [Fact]
     public void SaveAndTryGetFresh_RoundtripWorks()
     {
@@ -61,6 +72,10 @@ public class PluginScanCacheTests : IPluginScanCacheTests
         }
     }
 
+    /// <summary>
+    /// Ensures that <see cref="PluginScanCache.TryGetFresh"/> returns false when the cached data
+    /// is older than the plugin file (stale).
+    /// </summary>
     [Fact]
     public void TryGetFresh_ReturnsFalse_WhenCacheIsStale()
     {
@@ -108,6 +123,10 @@ public class PluginScanCacheTests : IPluginScanCacheTests
         }
     }
 
+    /// <summary>
+    /// Verifies that calling <see cref="PluginScanCache.Clear"/> for a specific plugin path
+    /// deletes the associated cache file.
+    /// </summary>
     [Fact]
     public void Clear_RemovesCacheFile()
     {
@@ -144,6 +163,10 @@ public class PluginScanCacheTests : IPluginScanCacheTests
         }
     }
 
+    /// <summary>
+    /// Confirms that calling <see cref="PluginScanCache.ClearAll"/> removes all cache files
+    /// associated with plugins in the test directory.
+    /// </summary>
     [Fact]
     public void ClearAll_RemovesAllCacheFiles()
     {
