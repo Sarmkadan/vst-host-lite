@@ -12,5 +12,5 @@ public interface IAudioGraph
     IReadOnlyList<GraphNode> GetProcessingOrder();
     IReadOnlyList<int> GetProcessingOrderIds();
     void Merge(AudioGraph other, string idPrefix);
-    void ProcessBlock(float[] input, float[] output, int sampleFrames);
+    void ProcessBlock(AudioProcessingOptions options, float[] input, float[] output, int sampleFrames);
 }

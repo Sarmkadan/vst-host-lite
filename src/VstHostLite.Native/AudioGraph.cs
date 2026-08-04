@@ -307,7 +307,7 @@ public sealed class AudioGraph : IAudioGraph
     /// index for process() is wrong on the components we tested, or the
     /// setupProcessing() call needs a valid ProcessSetup first. Shelved here.
     /// </remarks>
-    public void ProcessBlock(float[] input, float[] output, int sampleFrames)
+    public void ProcessBlock(AudioProcessingOptions options, float[] input, float[] output, int sampleFrames)
     {
         throw new NotImplementedException(
             "audio graph routing not working yet - ProcessData marshalling to " +
