@@ -1,4 +1,4 @@
-public class AudioBuffer
+public class AudioBuffer : IAudioBuffer
 {
     private float[] buffer;
     public int Channels { get; private set; }
