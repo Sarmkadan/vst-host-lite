@@ -59,7 +59,7 @@ public static class ParameterSmootherJsonExtensions
     /// Attempts to deserialize a <see cref="ParameterSmoother"/> from a JSON string.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <param name="value">Receives the deserialized parameter smoother if successful.</param>
+    /// <param name="value">Receives the deserialized parameter smoother if successful, or null if deserialization failed.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
     public static bool TryFromJson(string json, out ParameterSmoother? value)
     {
