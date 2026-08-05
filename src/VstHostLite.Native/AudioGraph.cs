@@ -313,6 +313,87 @@ public sealed class AudioGraph : IAudioGraph
             "audio graph routing not working yet - ProcessData marshalling to " +
             "IAudioProcessor::process is unsolved (see remarks / README)");
     }
+
+    public bool Equals(AudioGraph? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        if (Nodes.Count != other.Nodes.Count) return false;
+
+        for (int i = 0; i < Nodes.Count; i++)
+        {
+            var thisNode = Nodes[i];
+            var otherNode = other.Nodes[i];
+            if (thisNode.Name != otherNode.Name || thisNode.Component != otherNode.Component)
+                return false;
+
+            var thisPrev = thisNode.Prev;
+            var otherPrev = otherNode.Prev;
+            if (thisPrev == null ^ otherPrev == null) return false;
+            if (thisPrev != null && otherPrev != null)
+            {
+                if (thisPrev.Name != otherPrev.Name || thisPrev.Component != otherPrev.Component)
+                    return false;
+            }
+
+            var thisNext = thisNode.Next;
+            var otherNext = otherNode.Next;
+            if (thisNext == null ^ otherNext == null) return false;
+            if (thisNext != null && otherNext != null)
+            {
+                if (thisNext.Name != otherNext.Name || thisNext.Component != otherNext.Component)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as AudioGraph);
+    }
+
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var node in Nodes)
+        {
+            hash.Add(node.Name);
+            hash.Add(node.Component);
+            if (node.Prev != null)
+            {
+                hash.Add(node.Prev.Name);
+                hash.Add(node.Prev.Component);
+            }
+            else
+            {
+                hash.Add((string?)null);
+                hash.Add((nint?)null);
+            }
+            if (node.Next != null)
+            {
+                hash.Add(node.Next.Name);
+                hash.Add(node.Next.Component);
+            }
+            else
+            {
+                hash.Add((string?)null);
+                hash.Add((nint?)null);
+            }
+        }
+        return hash.ToHashCode();
+    }
+
+    public static bool operator ==(AudioGraph? left, AudioGraph? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(AudioGraph? left, AudioGraph? right)
+    {
+        return !(Equals(left, right));
+    }
 }
 
 public sealed class GraphNode
