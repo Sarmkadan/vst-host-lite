@@ -6,7 +6,7 @@ namespace VstHostLite.Native
     /// Smooths a parameter value towards a target using exponential smoothing.
     /// The smoothing speed is defined by a time constant (in seconds) and the sample rate.
     /// </summary>
-    public sealed class ParameterSmoother : IParameterSmoother
+    public sealed class ParameterSmoother : IParameterSmoother, IEquatable<ParameterSmoother>
     {
         private readonly float _sampleRate;
         private readonly float _timeConstantSeconds;
@@ -85,6 +85,33 @@ namespace VstHostLite.Native
             {
                 destination[i] = NextValue();
             }
+        }
+
+        public bool Equals(ParameterSmoother? other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other == null) return false;
+            return _sampleRate == other._sampleRate && _timeConstantSeconds == other._timeConstantSeconds;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as ParameterSmoother);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_sampleRate.GetHashCode(), _timeConstantSeconds.GetHashCode());
+        }
+
+        public static bool operator ==(ParameterSmoother? left, ParameterSmoother? right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(ParameterSmoother? left, ParameterSmoother? right)
+        {
+            return !(left == right);
         }
     }
 }
