@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace VstHostLite.Cli.Tests;
-
-public class CliArgsTests : ICliArgsTests
-{
+/// <summary>
+        /// Tests for <see cref="CliArgs"/> class
+        /// </summary>
+        public class CliArgsTests
+        {
     [Fact]
     public void NoArguments_PrintsUsageAndReturns1()
     {
