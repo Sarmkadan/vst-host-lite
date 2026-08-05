@@ -32,7 +32,7 @@ internal sealed class NintJsonConverter : JsonConverter<nint>
         if (string.IsNullOrEmpty(hexString))
             return nint.Zero;
 
-        if (hexString.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        if (hexString.StartsWith(AudioGraphJsonExtensionsConstants.HexPrefix, StringComparison.OrdinalIgnoreCase))
         {
             hexString = hexString.Substring(2);
         }
@@ -47,7 +47,7 @@ internal sealed class NintJsonConverter : JsonConverter<nint>
 
     public override void Write(Utf8JsonWriter writer, nint value, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(value.ToString("X", CultureInfo.InvariantCulture));
+        writer.WriteStringValue(value.ToString(AudioGraphJsonExtensionsConstants.HexFormat, CultureInfo.InvariantCulture));
     }
 }
 
@@ -77,7 +77,7 @@ public static class AudioGraphJsonExtensions
         {
             Name = node.Name,
             Component = node.Component,
-            NextIndex = node.Next is { } next ? nodesInOrder.IndexOf(next) : -1
+            NextIndex = node.Next is { } next ? nodesInOrder.IndexOf(next) : AudioGraphJsonExtensionsConstants.InvalidNodeIndex
         }).ToList());
 
         return JsonSerializer.Serialize(dto, context.AudioGraphDto);
@@ -97,11 +97,11 @@ public static class AudioGraphJsonExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
         var dto = JsonSerializer.Deserialize(json, Vst3HostJsonContext.Default.AudioGraphDto)
-            ?? throw new JsonException("Deserialized AudioGraphDto is null.");
+            ?? throw new JsonException(AudioGraphJsonExtensionsConstants.DeserializedDtoNullMessage);
 
         if (dto.Nodes.Count == 0)
         {
-            throw new JsonException("AudioGraphDto must contain at least one NodeDto.");
+            throw new JsonException(AudioGraphJsonExtensionsConstants.MissingNodeDtoMessage);
         }
 
         var graph = new AudioGraph();
