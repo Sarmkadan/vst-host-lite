@@ -9,7 +9,7 @@ namespace VstHostLite.Native;
 /// This node follows the same conventions as <see cref="MixerNode"/> and can
 /// be added to an <see cref="AudioGraph"/> via custom handling if required.
 /// </summary>
-public sealed class NoiseGeneratorNode : INoiseGeneratorNode
+public sealed class NoiseGeneratorNode : INoiseGeneratorNode, IEquatable<NoiseGeneratorNode>
 {
     private readonly Random _random;
     private readonly int _frames;
@@ -59,6 +59,35 @@ public sealed class NoiseGeneratorNode : INoiseGeneratorNode
     /// Gets the number of frames per buffer for this node.
     /// </summary>
     public int Frames => _frames;
+
+    public bool Equals(NoiseGeneratorNode? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Name == other.Name &&
+               _amplitude == other._amplitude &&
+               _frames == other._frames;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as NoiseGeneratorNode);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, _amplitude, _frames);
+    }
+
+    public static bool operator ==(NoiseGeneratorNode? left, NoiseGeneratorNode? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(NoiseGeneratorNode? left, NoiseGeneratorNode? right)
+    {
+        return !Equals(left, right);
+    }
 
     /// <summary>
     /// Generates a block of white noise into the provided output buffer.
