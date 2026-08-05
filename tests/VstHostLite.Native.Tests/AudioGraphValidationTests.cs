@@ -4,8 +4,17 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+/// <summary>
+/// Unit tests covering <c>AudioGraph.Validate</c>, <c>AudioGraph.IsValid</c>, and
+/// <c>AudioGraph.EnsureValid</c>, including null-name/null-component detection,
+/// self-reference and cycle detection, and disconnected-component detection.
+/// </summary>
 public class AudioGraphValidationTests
 {
+    /// <summary>
+    /// Verifies that calling <c>Validate</c> on a null <see cref="AudioGraph"/> reference throws
+    /// <see cref="ArgumentNullException"/>.
+    /// </summary>
     [Fact]
     public void Validate_ThrowsOnNullGraph()
     {
@@ -16,6 +25,10 @@ public class AudioGraphValidationTests
         Assert.Throws<ArgumentNullException>(() => nullGraph!.Validate());
     }
 
+    /// <summary>
+    /// Verifies that validating an empty graph returns a single problem stating the graph
+    /// must contain at least one node.
+    /// </summary>
     [Fact]
     public void Validate_EmptyGraph_ReturnsError()
     {
@@ -30,6 +43,9 @@ public class AudioGraphValidationTests
         Assert.Equal("AudioGraph must contain at least one node.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that <c>IsValid</c> returns <c>false</c> for an empty graph.
+    /// </summary>
     [Fact]
     public void Validate_EmptyGraph_IsValid_ReturnsFalse()
     {
@@ -43,6 +59,10 @@ public class AudioGraphValidationTests
         Assert.False(isValid);
     }
 
+    /// <summary>
+    /// Verifies that a single node with a null name produces a problem describing the
+    /// invalid name, identifying the node by its default "Node@..." display name.
+    /// </summary>
     [Fact]
     public void Validate_SingleNodeWithNullName_ReturnsError()
     {
@@ -60,6 +80,10 @@ public class AudioGraphValidationTests
         Assert.EndsWith("has an invalid name: must be non-null, non-empty, and not whitespace.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a single node whose name is whitespace-only produces a problem
+    /// describing the invalid name, identifying the node by its whitespace name.
+    /// </summary>
     [Fact]
     public void Validate_SingleNodeWithEmptyName_ReturnsError()
     {
@@ -77,6 +101,10 @@ public class AudioGraphValidationTests
         Assert.EndsWith("has an invalid name: must be non-null, non-empty, and not whitespace.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a single node with a valid, non-empty name and no component pointer
+    /// issue produces no validation problems.
+    /// </summary>
     [Fact]
     public void Validate_SingleNodeWithValidName_ReturnsNoErrors()
     {
@@ -91,6 +119,10 @@ public class AudioGraphValidationTests
         Assert.Empty(problems);
     }
 
+    /// <summary>
+    /// Verifies that a single node with a null component pointer (<see cref="nint.Zero"/>)
+    /// produces a problem describing the null component pointer.
+    /// </summary>
     [Fact]
     public void Validate_SingleNodeWithNullComponent_ReturnsError()
     {
@@ -108,6 +140,10 @@ public class AudioGraphValidationTests
         Assert.EndsWith("has a null component pointer (nint.Zero).", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a single node with a non-null component pointer produces no
+    /// validation problems.
+    /// </summary>
     [Fact]
     public void Validate_SingleNodeWithValidComponent_ReturnsNoErrors()
     {
@@ -124,6 +160,10 @@ public class AudioGraphValidationTests
         Assert.Empty(problems);
     }
 
+    /// <summary>
+    /// Verifies that a node whose <c>Prev</c> reference is forced (via reflection) to point
+    /// to itself produces a problem describing the self-reference in <c>Prev</c>.
+    /// </summary>
     [Fact]
     public void Validate_NodeWithSelfReferenceInPrev_ReturnsError()
     {
@@ -144,6 +184,10 @@ public class AudioGraphValidationTests
         Assert.EndsWith("has a self-reference in Prev.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a node whose <c>Next</c> reference is forced (via reflection) to point
+    /// to itself produces a problem describing the self-reference in <c>Next</c>.
+    /// </summary>
     [Fact]
     public void Validate_NodeWithSelfReferenceInNext_ReturnsError()
     {
@@ -164,6 +208,10 @@ public class AudioGraphValidationTests
         Assert.EndsWith("has a self-reference in Next.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a valid linear chain of three connected nodes produces no validation
+    /// problems.
+    /// </summary>
     [Fact]
     public void Validate_LinearChain_ReturnsNoErrors()
     {
@@ -182,6 +230,10 @@ public class AudioGraphValidationTests
         Assert.Empty(problems);
     }
 
+    /// <summary>
+    /// Verifies that a two-node cycle (node1 -&gt; node2 -&gt; node1) is detected and reported
+    /// as a single cycle problem naming the first node involved.
+    /// </summary>
     [Fact]
     public void Validate_GraphWithCycle_ReturnsCycleError()
     {
@@ -200,6 +252,10 @@ public class AudioGraphValidationTests
         Assert.Equal("AudioGraph contains a cycle involving node 'node1'.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a three-node cycle (node1 -&gt; node2 -&gt; node3 -&gt; node1) is detected
+    /// and reported as a single cycle problem naming the first node involved.
+    /// </summary>
     [Fact]
     public void Validate_GraphWithCycleInvolvingMultipleNodes_ReturnsCycleError()
     {
@@ -220,6 +276,10 @@ public class AudioGraphValidationTests
         Assert.Equal("AudioGraph contains a cycle involving node 'node1'.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a node with no connections to an otherwise connected pair of nodes is
+    /// reported as belonging to a disconnected component.
+    /// </summary>
     [Fact]
     public void Validate_DisconnectedNodes_ReturnsDisconnectedError()
     {
@@ -241,6 +301,11 @@ public class AudioGraphValidationTests
         Assert.EndsWith("is part of a disconnected component.", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that when a graph contains two separate connected chains, both chains other
+    /// than the first are reported as disconnected components, producing one problem per
+    /// affected node.
+    /// </summary>
     [Fact]
     public void Validate_MultipleDisconnectedComponents_ReturnsDisconnectedErrors()
     {
@@ -263,6 +328,10 @@ public class AudioGraphValidationTests
         Assert.Contains(problems, p => p.Contains("node4") && p.Contains("disconnected component"));
     }
 
+    /// <summary>
+    /// Verifies that a graph consisting solely of isolated nodes with no connections at all
+    /// produces no validation problems.
+    /// </summary>
     [Fact]
     public void Validate_IsolatedNodeWithNoConnections_ReturnsNoErrors()
     {
@@ -280,6 +349,10 @@ public class AudioGraphValidationTests
         Assert.Empty(problems);
     }
 
+    /// <summary>
+    /// Verifies that a realistic, fully connected linear signal chain (input -&gt; eq -&gt;
+    /// compressor -&gt; output) produces no validation problems.
+    /// </summary>
     [Fact]
     public void Validate_ComplexValidGraph_ReturnsNoErrors()
     {
@@ -301,6 +374,9 @@ public class AudioGraphValidationTests
         Assert.Empty(problems);
     }
 
+    /// <summary>
+    /// Verifies that <c>IsValid</c> returns <c>false</c> for an empty graph.
+    /// </summary>
     [Fact]
     public void IsValid_EmptyGraph_ReturnsFalse()
     {
@@ -314,6 +390,10 @@ public class AudioGraphValidationTests
         Assert.False(isValid);
     }
 
+    /// <summary>
+    /// Verifies that <c>IsValid</c> returns <c>true</c> for a graph with two connected,
+    /// properly named and componented nodes.
+    /// </summary>
     [Fact]
     public void IsValid_ValidGraph_ReturnsTrue()
     {
@@ -330,6 +410,10 @@ public class AudioGraphValidationTests
         Assert.True(isValid);
     }
 
+    /// <summary>
+    /// Verifies that <c>IsValid</c> returns <c>false</c> when a node has a null component
+    /// pointer.
+    /// </summary>
     [Fact]
     public void IsValid_InvalidGraph_ReturnsFalse()
     {
@@ -344,6 +428,11 @@ public class AudioGraphValidationTests
         Assert.False(isValid);
     }
 
+    /// <summary>
+    /// Verifies that <c>EnsureValid</c> throws <see cref="ArgumentException"/> for an empty
+    /// graph, with a message that includes both the summary text and the underlying
+    /// "must contain at least one node" problem.
+    /// </summary>
     [Fact]
     public void EnsureValid_EmptyGraph_Throws()
     {
@@ -356,6 +445,10 @@ public class AudioGraphValidationTests
         Assert.Contains("AudioGraph must contain at least one node", exception.Message);
     }
 
+    /// <summary>
+    /// Verifies that <c>EnsureValid</c> does not throw for a valid graph with two connected
+    /// nodes.
+    /// </summary>
     [Fact]
     public void EnsureValid_ValidGraph_DoesNotThrow()
     {
@@ -369,6 +462,10 @@ public class AudioGraphValidationTests
         graph.EnsureValid();
     }
 
+    /// <summary>
+    /// Verifies that calling <c>EnsureValid</c> on a null <see cref="AudioGraph"/> reference
+    /// throws <see cref="ArgumentNullException"/>.
+    /// </summary>
     [Fact]
     public void EnsureValid_NullGraph_ThrowsArgumentNullException()
     {
@@ -379,6 +476,11 @@ public class AudioGraphValidationTests
         Assert.Throws<ArgumentNullException>(() => nullGraph!.EnsureValid());
     }
 
+    /// <summary>
+    /// Verifies that <c>EnsureValid</c> throws <see cref="ArgumentException"/> when a node has
+    /// a null component pointer, with a message that includes both the summary text and the
+    /// underlying null-component problem.
+    /// </summary>
     [Fact]
     public void EnsureValid_InvalidGraph_ThrowsWithProblems()
     {
@@ -392,6 +494,11 @@ public class AudioGraphValidationTests
         Assert.Contains("has a null component pointer", exception.Message);
     }
 
+    /// <summary>
+    /// Verifies that a node combining a null name, a null component pointer, and a
+    /// self-reference (forced via reflection) yields all three corresponding validation
+    /// problems simultaneously.
+    /// </summary>
     [Fact]
     public void Validate_MultipleProblems_ReturnsAllErrors()
     {
@@ -416,6 +523,9 @@ public class AudioGraphValidationTests
         Assert.Contains(problems, p => p.Contains("self-reference"));
     }
 
+    /// <summary>
+    /// Verifies that connecting a node to itself via <c>Connect</c> is detected as a cycle.
+    /// </summary>
     [Fact]
     public void Validate_SelfConnectionInNext_ReturnsError()
     {
@@ -432,6 +542,10 @@ public class AudioGraphValidationTests
         Assert.Contains("cycle", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a simple two-node cycle (A -&gt; B -&gt; A) created via <c>Connect</c> is
+    /// reported as a cycle problem.
+    /// </summary>
     [Fact]
     public void Validate_SimpleCycle_ReturnsCycleError()
     {
@@ -450,6 +564,10 @@ public class AudioGraphValidationTests
         Assert.Contains("cycle", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a longer four-node cycle (A -&gt; B -&gt; C -&gt; D -&gt; A) created via
+    /// <c>Connect</c> is reported as a cycle problem.
+    /// </summary>
     [Fact]
     public void Validate_LongCycle_ReturnsCycleError()
     {
@@ -472,6 +590,10 @@ public class AudioGraphValidationTests
         Assert.Contains("cycle", problems[0]);
     }
 
+    /// <summary>
+    /// Verifies that a three-node triangle cycle (A -&gt; B -&gt; C -&gt; A) created via
+    /// <c>Connect</c> is reported as a cycle problem.
+    /// </summary>
     [Fact]
     public void Validate_TriangleCycle_ReturnsCycleError()
     {
