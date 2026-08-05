@@ -32,7 +32,7 @@ public sealed class NoiseGeneratorNode : INoiseGeneratorNode, IEquatable<NoiseGe
 
         _frames = frames;
         _random = seed.HasValue ? new Random(seed.Value) : new Random();
-        _amplitude = 1.0f; // default to full amplitude
+        _amplitude = NoiseGeneratorNodeConstants.DefaultAmplitude; // default to full amplitude
     }
 
     /// <summary>
@@ -49,8 +49,11 @@ public sealed class NoiseGeneratorNode : INoiseGeneratorNode, IEquatable<NoiseGe
         get => _amplitude;
         set
         {
-            if (value < 0.0f || value > 1.0f || float.IsNaN(value) || float.IsInfinity(value))
-                throw new ArgumentOutOfRangeException(nameof(value), "Amplitude must be a finite number in the range [0,1].");
+            if (value < NoiseGeneratorNodeConstants.MinAmplitude || 
+                value > NoiseGeneratorNodeConstants.MaxAmplitude || 
+                float.IsNaN(value) || 
+                float.IsInfinity(value))
+                throw new ArgumentOutOfRangeException(nameof(value), $"Amplitude must be a finite number in the range [{NoiseGeneratorNodeConstants.MinAmplitude},{NoiseGeneratorNodeConstants.MaxAmplitude}].");
             _amplitude = value;
         }
     }
@@ -111,7 +114,7 @@ public sealed class NoiseGeneratorNode : INoiseGeneratorNode, IEquatable<NoiseGe
         for (int i = 0; i < _frames; i++)
         {
             // Random.NextDouble returns [0.0, 1.0); shift to [-1, 1)
-            double sample = (_random.NextDouble() * 2.0) - 1.0;
+            double sample = (_random.NextDouble() * NoiseGeneratorNodeConstants.NoiseRangeFactor) - NoiseGeneratorNodeConstants.NoiseRangeOffset;
             output[i] = (float)(sample * _amplitude);
         }
     }
