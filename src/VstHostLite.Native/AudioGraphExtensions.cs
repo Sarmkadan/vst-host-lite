@@ -21,7 +21,7 @@ public static class AudioGraphExtensions
         var nodes = graph.Nodes;
         if (!nodes.Contains(node))
         {
-            throw new ArgumentException("The specified node is not part of the graph.", nameof(node));
+            throw new ArgumentException(AudioGraphExtensionsConstants.NodeNotPartOfGraphExceptionMessage, nameof(node));
         }
 
         var nodesList = (List<GraphNode>)nodes;
