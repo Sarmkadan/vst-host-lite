@@ -14,6 +14,8 @@ public sealed class AudioGraph : IAudioGraph
 {
     private readonly List<GraphNode> _nodes = new();
     private readonly List<GraphNode> _processingOrder = new();
+    private readonly Dictionary<int, GraphNode> _idToNode = new();
+    private readonly Dictionary<GraphNode, int> _nodeToId = new();
     private bool _topologyDirty = true;
 
     public IReadOnlyList<GraphNode> Nodes => _nodes;
@@ -37,6 +39,8 @@ public sealed class AudioGraph : IAudioGraph
     public void AddNode(GraphNode node)
     {
         _nodes.Add(node);
+        _idToNode[_nodes.Count - 1] = node;
+        _nodeToId[node] = _nodes.Count - 1;
         _topologyDirty = true;
     }
 
@@ -56,7 +60,7 @@ public sealed class AudioGraph : IAudioGraph
         var ids = new List<int>(order.Count);
         foreach (var n in order)
         {
-            ids.Add(_nodes.IndexOf(n));
+            ids.Add(_nodeToId[n]);
         }
         return ids.AsReadOnly();
     }
@@ -104,7 +108,7 @@ public sealed class AudioGraph : IAudioGraph
             int minIdx = int.MaxValue;
             foreach (var candidate in availableNodes)
             {
-                int idx = _nodes.IndexOf(candidate);
+                int idx = _nodeToId[candidate];
                 if (idx < minIdx)
                 {
                     minIdx = idx;
@@ -226,7 +230,7 @@ public sealed class AudioGraph : IAudioGraph
         var nodeIds = new List<int>(cyclePath.Count);
         foreach (var n in cyclePath)
         {
-            nodeIds.Add(_nodes.IndexOf(n));
+            nodeIds.Add(_nodeToId[n]);
         }
         return $"[{string.Join(" → ", nodeIds)}]";
     }
