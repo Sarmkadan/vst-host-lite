@@ -12,7 +12,7 @@ public sealed class DelayNode : IEquatable<DelayNode>
     private int _writeIndex;
     private float _feedback = 0.5f;
     private float _dryWetMix = 0.5f;
-    private int _delaySamples = 44100 / 4; // Default: 1/4 second at 44.1kHz
+    private int _delaySamples = DelayNodeConstants.DefaultMaxDelayTimeMs; // Default: 1/4 second at 44.1kHz
 
     /// <summary>
     /// Creates a new DelayNode.
