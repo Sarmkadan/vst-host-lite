@@ -26,7 +26,7 @@ public sealed class MixerNode
         // Default to unity gain for all inputs
         for (int i = 0; i < inputCount; i++)
         {
-            _gains[i] = 1.0f;
+            _gains[i] = MixerNodeConstants.DefaultGain;
         }
     }
 
