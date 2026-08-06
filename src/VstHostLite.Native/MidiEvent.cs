@@ -27,7 +27,7 @@ public readonly record struct MidiEvent(
     /// <returns>A new MidiEvent with Note On status</returns>
     public static MidiEvent NoteOn(byte note, byte velocity, long sampleOffset)
     {
-        return new MidiEvent((byte)(0x90 | 0), note, velocity, sampleOffset);
+        return new MidiEvent(MidiEventQueueConstants.NoteOnStatus, note, velocity, sampleOffset);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public readonly record struct MidiEvent(
     /// <returns>A new MidiEvent with Note Off status</returns>
     public static MidiEvent NoteOff(byte note, byte velocity, long sampleOffset)
     {
-        return new MidiEvent((byte)(0x80 | 0), note, velocity, sampleOffset);
+        return new MidiEvent(MidiEventQueueConstants.NoteOffStatus, note, velocity, sampleOffset);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public readonly record struct MidiEvent(
     /// <returns>A new MidiEvent with Control Change status</returns>
     public static MidiEvent CC(byte controller, byte value, long sampleOffset)
     {
-        return new MidiEvent(0xB0, controller, value, sampleOffset);
+        return new MidiEvent(MidiEventQueueConstants.ControlChangeStatus, controller, value, sampleOffset);
     }
 
     /// <summary>
@@ -236,33 +236,33 @@ public sealed class MidiEventQueue : IMidiEventQueue, IEquatable<MidiEventQueue>
     {
         // MIDI channel: 0-15 (16 channels total)
         // Status byte contains channel in lower 4 bits
-        if (e.Channel > 15)
+        if (e.Channel > MidiEventQueueConstants.MaxMidiChannel)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(e),
-                $"MIDI channel must be between 0 and 15, got {e.Channel}.");
+                $"MIDI channel must be between 0 and {MidiEventQueueConstants.MaxMidiChannel}, got {e.Channel}.");
         }
 
         // Data1 contains note number for note events, controller number for CC events
         // Must be 0-127 (7-bit MIDI data)
-        if (e.Data1 > 127)
+        if (e.Data1 > MidiEventQueueConstants.MaxMidiDataValue)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(e.Data1),
-                $"MIDI data1 must be between 0 and 127, got {e.Data1}.");
+                $"MIDI data1 must be between 0 and {MidiEventQueueConstants.MaxMidiDataValue}, got {e.Data1}.");
         }
 
         // Data2 contains velocity for note events, value for CC events
         // Must be 0-127 (7-bit MIDI data)
-        if (e.Data2 > 127)
+        if (e.Data2 > MidiEventQueueConstants.MaxMidiDataValue)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(e.Data2),
-                $"MIDI data2 must be between 0 and 127, got {e.Data2}.");
+                $"MIDI data2 must be between 0 and {MidiEventQueueConstants.MaxMidiDataValue}, got {e.Data2}.");
         }
 
         // SampleOffset must be non-negative
-        if (e.SampleOffset < 0)
+        if (e.SampleOffset < MidiEventQueueConstants.MinSampleOffset)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(e.SampleOffset),
