@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace VstHostLite.Native.Tests;
@@ -6,8 +7,18 @@ namespace VstHostLite.Native.Tests;
 /// <summary>
 /// Contains tests for the AudioGraph class functionality.
 /// </summary>
-public class AudioGraphTests : IAudioGraphTests
+public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
 {
+    public bool Equals(AudioGraphTests? other) => other is not null;
+
+    public override bool Equals(object? obj) => obj is AudioGraphTests;
+
+    public override int GetHashCode() => HashCode.Combine(this.GetType());
+
+    public static bool operator ==(AudioGraphTests? left, AudioGraphTests? right) => EqualityComparer<AudioGraphTests>.Default.Equals(left, right);
+
+    public static bool operator !=(AudioGraphTests? left, AudioGraphTests? right) => !EqualityComparer<AudioGraphTests>.Default.Equals(left, right);
+
  [Fact]
  public void Merge_ThrowsOnNullOtherGraph()
  {
