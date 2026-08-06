@@ -1,4 +1,5 @@
 using System.IO;
+using System.Collections.Generic;
 using Xunit;
 
 namespace VstHostLite.Native.Tests;
@@ -6,8 +7,18 @@ namespace VstHostLite.Native.Tests;
 /// <summary>
 /// Contains unit tests for the <see cref="PluginScanCache"/> class.
 /// </summary>
-public class PluginScanCacheTests : IPluginScanCacheTests
+public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScanCacheTests>
 {
+    public bool Equals(PluginScanCacheTests? other) => other is not null;
+
+    public override bool Equals(object? obj) => obj is PluginScanCacheTests;
+
+    public override int GetHashCode() => HashCode.Combine(this.GetType());
+
+    public static bool operator ==(PluginScanCacheTests? left, PluginScanCacheTests? right) => EqualityComparer<PluginScanCacheTests>.Default.Equals(left, right);
+
+    public static bool operator !=(PluginScanCacheTests? left, PluginScanCacheTests? right) => !EqualityComparer<PluginScanCacheTests>.Default.Equals(left, right);
+
     /// <summary>
     /// Verifies that <see cref="PluginScanCache.TryGetFresh"/> returns false and a null result
     /// when the specified plugin path does not exist.
