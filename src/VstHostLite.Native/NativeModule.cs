@@ -7,7 +7,7 @@ namespace VstHostLite.Native;
 /// DLL; on Linux/macOS it is a bundle directory with the shared object inside.
 /// We only ever got Windows-style single-file modules to load reliably.
 /// </summary>
-public sealed class NativeModule : IDisposable
+public sealed class NativeModule : IDisposable, IEquatable<NativeModule>
 {
     private nint _handle;
     private bool _entered;
@@ -130,6 +130,21 @@ public sealed class NativeModule : IDisposable
         _handle = 0;
         _disposed = true;
     }
+
+    public bool Equals(NativeModule? other)
+    {
+        if (other is null)
+            return false;
+
+        return Path == other.Path;
+    }
+
+    public override bool Equals(object? obj) => Equals(obj as NativeModule);
+
+    public override int GetHashCode() => HashCode.Combine(Path);
+
+    public static bool operator ==(NativeModule? left, NativeModule? right) => left?.Equals(right) ?? false;
+    public static bool operator !=(NativeModule? left, NativeModule? right) => !(left == right);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate bool EntryDelegate(nint handle);
