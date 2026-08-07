@@ -74,7 +74,7 @@ public static class PluginScanCache
 
         if (string.IsNullOrWhiteSpace(pluginPath))
         {
-            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+            throw new ArgumentException(PluginScanCacheConstants.PluginPathEmptyOrWhitespaceErrorMessage, nameof(pluginPath));
         }
 
         cachedInfo = null;
@@ -138,7 +138,7 @@ public static class PluginScanCache
 
         if (string.IsNullOrWhiteSpace(pluginPath))
         {
-            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+            throw new ArgumentException(PluginScanCacheConstants.PluginPathEmptyOrWhitespaceErrorMessage, nameof(pluginPath));
         }
 
         if (!File.Exists(pluginPath))
@@ -154,8 +154,8 @@ public static class PluginScanCache
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = Environment.ProcessPath ?? throw new InvalidOperationException("Could not determine current process path."),
-                    Arguments = $"scan-one \"{pluginPath}\"",
+                    FileName = Environment.ProcessPath ?? throw new InvalidOperationException(PluginScanCacheConstants.CouldNotDetermineProcessPathErrorMessage),
+                    Arguments = $"{PluginScanCacheConstants.ScanCommandArgument} \"{pluginPath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -168,7 +168,7 @@ public static class PluginScanCache
             process.Start();
 
             // Wait for completion with timeout to prevent hanging
-            if (!process.WaitForExit(10000)) // 10 second timeout
+            if (!process.WaitForExit(PluginScanCacheConstants.ProcessTimeoutMilliseconds)) // 10 second timeout
             {
                 process.Kill();
                 return null;
@@ -221,7 +221,7 @@ public static class PluginScanCache
 
         if (string.IsNullOrWhiteSpace(pluginPath))
         {
-            throw new ArgumentException("Plugin path cannot be empty or whitespace.", nameof(pluginPath));
+            throw new ArgumentException(PluginScanCacheConstants.PluginPathEmptyOrWhitespaceErrorMessage, nameof(pluginPath));
         }
 
         if (pluginClassInfos.Count == 0)
