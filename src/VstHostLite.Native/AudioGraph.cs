@@ -29,11 +29,26 @@ public sealed class AudioGraph : IAudioGraph
 
     public void Connect(GraphNode from, GraphNode to)
     {
-        // Topology bookkeeping is fine; it is the actual buffer handoff that
-        // is unsolved.
+        if (from == to)
+            throw new InvalidOperationException("Cannot connect a node to itself");
+        if (HasPathTo(from, to))
+            throw new InvalidOperationException("Cannot connect nodes that would create a cycle");
         from.Next = to;
         to.Prev = from;
         _topologyDirty = true;
+    }
+    private bool HasPathTo(GraphNode from, GraphNode to)
+    {
+        var visited = new HashSet<GraphNode>();
+        return DFS(from, to, visited);
+    }
+    private bool DFS(GraphNode node, GraphNode target, HashSet<GraphNode> visited)
+    {
+        if (node == target) return true;
+        if (visited.Contains(node)) return false;
+        visited.Add(node);
+        if (node.Next != null && DFS(node.Next, target, visited)) return true;
+        return false;
     }
 
     public void AddNode(GraphNode node)
