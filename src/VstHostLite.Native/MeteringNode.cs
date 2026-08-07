@@ -24,13 +24,13 @@ public sealed class MeteringNode : IMeteringNode
     /// <exception cref="ArgumentOutOfRangeException">When <paramref name="channelCount"/> is less than 1.</exception>
     public MeteringNode(int channelCount)
     {
-        if (channelCount < 1)
+        if (channelCount < MeteringNodeConstants.MinimumChannelCount)
             throw new ArgumentOutOfRangeException(nameof(channelCount), "Channel count must be at least 1.");
 
         _channelCount = channelCount;
         _peak = new float[channelCount];
         _sumSquares = new double[channelCount];
-        _sampleCount = 0;
+        _sampleCount = MeteringNodeConstants.ZeroSampleCount;
     }
 
     /// <summary>
@@ -73,9 +73,9 @@ public sealed class MeteringNode : IMeteringNode
     /// </summary>
     public void Reset()
     {
-        Array.Clear(_peak, 0, _peak.Length);
-        Array.Clear(_sumSquares, 0, _sumSquares.Length);
-        _sampleCount = 0;
+        Array.Clear(_peak, MeteringNodeConstants.ArrayClearStartIndex, _peak.Length);
+        Array.Clear(_sumSquares, MeteringNodeConstants.ArrayClearStartIndex, _sumSquares.Length);
+        _sampleCount = MeteringNodeConstants.ZeroSampleCount;
     }
 
     /// <summary>
