@@ -27,7 +27,7 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   var node = graph.AddNode("node1", nint.Zero);
 
   // Act & Assert
-  Assert.Throws<ArgumentNullException>(() => graph.Merge(null!, "prefix_"));
+  Assert.Throws<ArgumentNullException>(() => graph.Merge(null!, "PrefixValue"));
  }
 
  [Fact]
@@ -65,14 +65,14 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   var node4 = graph2.AddNode("node4", nint.Zero);
 
   // Act
-  graph1.Merge(graph2, "prefix_");
+  graph1.Merge(graph2, "PrefixValue");
 
   // Assert
   Assert.Equal(4, graph1.Nodes.Count);
   Assert.Contains(graph1.Nodes, n => n.Name == "node1");
   Assert.Contains(graph1.Nodes, n => n.Name == "node2");
-  Assert.Contains(graph1.Nodes, n => n.Name == "prefix_node3");
-  Assert.Contains(graph1.Nodes, n => n.Name == "prefix_node4");
+  Assert.Contains(graph1.Nodes, n => n.Name == "PrefixValuenode3");
+  Assert.Contains(graph1.Nodes, n => n.Name == "PrefixValuenode4");
  }
 
  [Fact]
@@ -90,13 +90,13 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   graph2.Connect(node3, node4);
 
   // Act
-  graph1.Merge(graph2, "prefix_");
+  graph1.Merge(graph2, "PrefixValue");
 
   // Assert - connections should be preserved
   var mergedNode1 = graph1.Nodes.First(n => n.Name == "node1");
   var mergedNode2 = graph1.Nodes.First(n => n.Name == "node2");
-  var mergedNode3 = graph1.Nodes.First(n => n.Name == "prefix_node3");
-  var mergedNode4 = graph1.Nodes.First(n => n.Name == "prefix_node4");
+  var mergedNode3 = graph1.Nodes.First(n => n.Name == "PrefixValuenode3");
+  var mergedNode4 = graph1.Nodes.First(n => n.Name == "PrefixValuenode4");
 
   Assert.Equal(mergedNode2, mergedNode1.Next);
   Assert.Equal(mergedNode4, mergedNode3.Next);
@@ -108,15 +108,15 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   // Arrange
   var graph1 = new AudioGraph();
   var node1 = graph1.AddNode("node1", nint.Zero);
-  var node2 = graph1.AddNode("prefix_node2", nint.Zero);
+  var node2 = graph1.AddNode("PrefixValuenode2", nint.Zero);
 
   var graph2 = new AudioGraph();
   var node3 = graph2.AddNode("node2", nint.Zero);
 
   // Act & Assert
-  var exception = Assert.Throws<ArgumentException>(() => graph1.Merge(graph2, "prefix_"));
+  var exception = Assert.Throws<ArgumentException>(() => graph1.Merge(graph2, "PrefixValue"));
   Assert.Contains("Node name collision after prefixing", exception.Message);
-  Assert.Contains("prefix_node2", exception.Message);
+  Assert.Contains("PrefixValuenode2", exception.Message);
  }
 
  [Fact]
@@ -129,7 +129,7 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   var graph2 = new AudioGraph();
 
   // Act
-  graph1.Merge(graph2, "prefix_");
+  graph1.Merge(graph2, "PrefixValue");
 
   // Assert
   Assert.Single(graph1.Nodes);
@@ -148,12 +148,12 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   graph2.Connect(node1, node2);
 
   // Act
-  graph1.Merge(graph2, "prefix_");
+  graph1.Merge(graph2, "PrefixValue");
 
   // Assert
   Assert.Equal(2, graph1.Nodes.Count);
-  Assert.Equal("prefix_node1", graph1.Nodes[0].Name);
-  Assert.Equal("prefix_node2", graph1.Nodes[1].Name);
+  Assert.Equal("PrefixValuenode1", graph1.Nodes[0].Name);
+  Assert.Equal("PrefixValuenode2", graph1.Nodes[1].Name);
   Assert.Equal(graph1.Nodes[1], graph1.Nodes[0].Next);
  }
 
@@ -212,15 +212,15 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
   graph2.Connect(node3, node4);
 
   // Act
-  graph1.Merge(graph2, "prefix_");
+  graph1.Merge(graph2, "PrefixValue");
 
   // Assert
   var processingOrder = graph1.GetProcessingOrder();
   Assert.Equal(4, processingOrder.Count);
   Assert.Equal("node1", processingOrder[0].Name);
   Assert.Equal("node2", processingOrder[1].Name);
-  Assert.Equal("prefix_node3", processingOrder[2].Name);
-  Assert.Equal("prefix_node4", processingOrder[3].Name);
+  Assert.Equal("PrefixValuenode3", processingOrder[2].Name);
+  Assert.Equal("PrefixValuenode4", processingOrder[3].Name);
  }
 
  [Fact]
@@ -280,17 +280,17 @@ public class AudioGraphTests : IAudioGraphTests, IEquatable<AudioGraphTests>
  {
   // Arrange
   var graph = new AudioGraph();
-  var node1 = graph.AddNode("duplicate", nint.Zero);
+  var node1 = graph.AddNode("DuplicateName", nint.Zero);
 
   // Act
   var componentPtr = new nint(1);
-  var node2 = new GraphNode("duplicate", componentPtr);
+  var node2 = new GraphNode("DuplicateName", componentPtr);
   graph.AddNode(node2);
 
-  // Assert - AudioGraph allows duplicate names
+  // Assert - AudioGraph allows DuplicateName names
   Assert.Equal(2, graph.Nodes.Count);
-  Assert.Equal("duplicate", node1.Name);
-  Assert.Equal("duplicate", node2.Name);
+  Assert.Equal("DuplicateName", node1.Name);
+  Assert.Equal("DuplicateName", node2.Name);
  }
 
  [Fact]
