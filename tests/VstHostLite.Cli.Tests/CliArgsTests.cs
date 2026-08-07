@@ -48,8 +48,8 @@ public class CliArgsTests : IEquatable<CliArgsTests>
         var errorOutput = errorWriter.ToString();
 
         Assert.Equal(1, result);
-        Assert.Contains("vst-host-lite", output);
-        Assert.Contains("usage:", output);
+        Assert.Contains(CliArgsTestsConstants.VstHostLite, output);
+        Assert.Contains(CliArgsTestsConstants.UsagePrefix, output);
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class CliArgsTests : IEquatable<CliArgsTests>
         var errorOutput = errorWriter.ToString();
 
         Assert.Equal(1, result);
-        Assert.Contains("vst-host-lite", output);
-        Assert.Contains("usage:", output);
+        Assert.Contains(CliArgsTestsConstants.VstHostLite, output);
+        Assert.Contains(CliArgsTestsConstants.UsagePrefix, output);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class CliArgsTests : IEquatable<CliArgsTests>
         var output = writer.ToString();
         var errorOutput = errorWriter.ToString();
 
-        Assert.Equal(2, result);
+        Assert.Equal(CliArgsTestsConstants.PlayCommandExitCode, result);
         Assert.Contains("`play` is not implemented", errorOutput);
         Assert.Contains("audio graph routing is unfinished", errorOutput);
     }
@@ -186,7 +186,7 @@ public class CliArgsTests : IEquatable<CliArgsTests>
         var errorOutput = errorWriter.ToString();
 
         Assert.Equal(1, result);
-        Assert.Contains("error:", errorOutput);
+        Assert.Contains(CliArgsTestsConstants.ErrorPrefix, errorOutput);
     }
 
     [Fact]
