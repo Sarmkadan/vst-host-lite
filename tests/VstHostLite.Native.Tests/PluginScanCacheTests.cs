@@ -45,7 +45,7 @@ public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScan
     public void SaveAndTryGetFresh_RoundtripWorks()
     {
         // Arrange
-        var testPluginPath = Path.GetTempFileName() + ".vst3";
+        var testPluginPath = Path.GetTempFileName() + PluginScanCacheTestsConstants.Vst3Extension;
         var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
@@ -91,7 +91,7 @@ public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScan
     public void TryGetFresh_ReturnsFalse_WhenCacheIsStale()
     {
         // Arrange
-        var testPluginPath = Path.GetTempFileName() + ".vst3";
+        var testPluginPath = Path.GetTempFileName() + PluginScanCacheTestsConstants.Vst3Extension;
         var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
@@ -101,14 +101,14 @@ public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScan
 
             var testInfos = new List<PluginClassInfo>
             {
-                new PluginClassInfo("test-cid", "Test", "Test Plugin")
+                new PluginClassInfo(PluginScanCacheTestsConstants.TestCid, PluginScanCacheTestsConstants.TestCategory, PluginScanCacheTestsConstants.TestPluginName)
             };
 
             // Save to cache
             PluginScanCache.Save(testPluginPath, testInfos);
 
             // Wait a bit to ensure timestamp difference
-            Thread.Sleep(10);
+            Thread.Sleep(PluginScanCacheTestsConstants.ShortSleepMs);
 
             // Modify the plugin file (making cache stale)
             File.WriteAllText(testPluginPath, "modified");
@@ -142,14 +142,14 @@ public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScan
     public void Clear_RemovesCacheFile()
     {
         // Arrange
-        var testPluginPath = Path.GetTempFileName() + ".vst3";
+        var testPluginPath = Path.GetTempFileName() + PluginScanCacheTestsConstants.Vst3Extension;
         var cacheFilePath = testPluginPath + PluginScanCache.CacheFileExtension;
 
         try
         {
             var testInfos = new List<PluginClassInfo>
             {
-                new PluginClassInfo("test-cid", "Test", "Test Plugin")
+                new PluginClassInfo(PluginScanCacheTestsConstants.TestCid, PluginScanCacheTestsConstants.TestCategory, PluginScanCacheTestsConstants.TestPluginName)
             };
 
             // Save to cache
