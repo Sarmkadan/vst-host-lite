@@ -113,7 +113,7 @@ public static class NativeModuleExtensions
 
         if (!File.Exists(module.Path))
         {
-            throw new FileNotFoundException("Module file not found", module.Path);
+            throw new FileNotFoundException(NativeModuleExtensionsConstants.ModuleFileNotFound, module.Path);
         }
 
         return new FileInfo(module.Path).Length;
@@ -132,7 +132,7 @@ public static class NativeModuleExtensions
 
         if (!File.Exists(module.Path))
         {
-            throw new FileNotFoundException("Module file not found", module.Path);
+            throw new FileNotFoundException(NativeModuleExtensionsConstants.ModuleFileNotFound, module.Path);
         }
 
         return new FileInfo(module.Path).LastWriteTimeUtc;
