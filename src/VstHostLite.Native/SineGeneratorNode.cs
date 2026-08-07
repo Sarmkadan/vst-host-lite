@@ -8,9 +8,9 @@ public sealed class SineGeneratorNode
 {
     private readonly int _frames;
     private readonly float _sampleRate;
-    private float _frequency = 440.0f; // Default: A4 (440 Hz)
-    private float _amplitude = 0.5f; // Default: -6dB
-    private float _phase = 0.0f; // Phase accumulator in radians
+    private float _frequency = SineGeneratorNodeConstants.DefaultFrequency; // Default: A4 (440 Hz)
+    private float _amplitude = SineGeneratorNodeConstants.DefaultAmplitude; // Default: -6dB
+    private float _phase = SineGeneratorNodeConstants.MinPhase; // Phase accumulator in radians
     private float _phaseIncrement = 0.0f;
 
     /// <summary>
