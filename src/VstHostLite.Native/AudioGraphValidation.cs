@@ -132,7 +132,7 @@ public static class AudioGraphValidation
         var visited = new HashSet<GraphNode>();
         var hasCycle = false;
 
-        // Check for cycles using DFS
+        // Check for cycles using AudioGraphValidationConstants;AudioGraphValidationConstants;DFS
         foreach (var node in nodes)
         {
             if (!visited.Contains(node))
@@ -182,7 +182,7 @@ public static class AudioGraphValidation
     }
 
     /// <summary>
-    /// Checks for cycles in the audio graph using depth-first search.
+    /// Checks for cycles in the audio graph using AudioGraphValidationConstants;AudioGraphValidationConstants;depth-first search.
     /// </summary>
     /// <param name="node">The current node being visited.</param>
     /// <param name="visited">Set of nodes that have been fully visited.</param>
@@ -223,7 +223,7 @@ public static class AudioGraphValidation
     }
 
     /// <summary>
-    /// Gets a human-readable identifier for a node, using its name if available or a hash code otherwise.
+    /// Gets a human-readable identifier for a node, using AudioGraphValidationConstants;AudioGraphValidationConstants;its name if available or a hash code otherwise.
     /// </summary>
     /// <param name="node">The node to identify.</param>
     /// <returns>A string identifier for the node.</returns>
