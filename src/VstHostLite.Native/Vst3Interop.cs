@@ -219,6 +219,7 @@ public class Vst3Interop : IEquatable<Vst3Interop>
         string? filter,
         string? category)
     {
+        ArgumentNullException.ThrowIfNull(infos);
         // If no filters are supplied, return the full list.
         if (filter == null && category == null)
         {
