@@ -152,3 +152,41 @@ class Example
 ```
 
 The graph supports adding nodes, connecting them via `Connect()`, and processing audio blocks through `ProcessBlock()`. Node properties include `Name` for identification, `Component` for the underlying VST3 component handle, and `Prev`/`Next` for traversing the graph structure.
+
+## PanNodeJsonExtensions
+
+`PanNodeJsonExtensions` provides JSON serialization helpers for `PanNode`, following the same pattern as the other `*JsonExtensions` helpers in the project. It serializes a pan node to a JSON string via `ToJson()`, and parses one back with `FromJson()` or the non-throwing `TryFromJson()`. The serialized shape captures the node's `Name`, `Pan` position, and `Frames` count.
+
+Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+class Example
+{
+    static void Main()
+    {
+        // Parse a pan node from JSON.
+        const string json = """{ "name": "LeadPan", "pan": -0.75, "frames": 512 }""";
+        var node = PanNodeJsonExtensions.FromJson(json);
+
+        if (node is not null)
+        {
+            Console.WriteLine($"Name:   {node.Name}");
+            Console.WriteLine($"Pan:    {node.Pan}");
+            Console.WriteLine($"Frames: {node.Frames}");
+
+            // Serialize the node back to JSON.
+            var roundTripped = node.ToJson();
+            Console.WriteLine(roundTripped);
+        }
+
+        // TryFromJson is the non-throwing variant.
+        if (PanNodeJsonExtensions.TryFromJson(json, out var parsed))
+        {
+            Console.WriteLine($"Parsed '{parsed?.Name}' successfully.");
+        }
+    }
+}
+```
