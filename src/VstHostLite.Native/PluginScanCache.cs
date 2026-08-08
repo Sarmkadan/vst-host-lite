@@ -68,7 +68,7 @@ public static class PluginScanCache
     /// <returns>True if valid cached data exists; false otherwise.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="pluginPath"/> is <see langword="null"/></exception>
     /// <exception cref="ArgumentException"><paramref name="pluginPath"/> is empty or whitespace</exception>
-    public static bool TryGetFresh(string pluginPath, out List<PluginClassInfo>? cachedInfo)
+    public static bool TryGetFresh(string? pluginPath, out List<PluginClassInfo>? cachedInfo)
     {
         ArgumentNullException.ThrowIfNull(pluginPath);
 
@@ -132,7 +132,7 @@ public static class PluginScanCache
     /// <returns>List of plugin class information, or null if scanning failed.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="pluginPath"/> is <see langword="null"/></exception>
     /// <exception cref="ArgumentException"><paramref name="pluginPath"/> is empty or whitespace</exception>
-    public static List<PluginClassInfo>? ScanWithIsolation(string pluginPath)
+    public static List<PluginClassInfo>? ScanWithIsolation(string? pluginPath)
     {
         ArgumentNullException.ThrowIfNull(pluginPath);
 

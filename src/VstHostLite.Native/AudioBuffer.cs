@@ -107,7 +107,7 @@ public class AudioBuffer : IAudioBuffer
     /// </summary>
     /// <param name="buffer">The buffer to deinterleave. Must have at least two channels.</param>
     /// <returns>A new AudioBuffer with one channel and a frame count equal to (original channels * original frames).</returns>
-    public static AudioBuffer Deinterleave(AudioBuffer buffer)
+    public static AudioBuffer Deinterleave(AudioBuffer? buffer)
     {
         if (buffer == null)
             throw new ArgumentNullException(nameof(buffer));
