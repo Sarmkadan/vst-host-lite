@@ -1,13 +1,26 @@
-/// <summary>
-///     Document the type `AudioBufferTests` and every public member with /// <summary>, <param>, <returns> where applicable.
-/// </summary>
+using System;
+using VstHostLite.Native;
+using Xunit;
+
 public class AudioBufferTests
 {
-    /// <summary>
-    ///     Document every public member with /// <summary>, <param>, <returns> where applicable.
-    /// </summary>
-    public void TestMethod()
+    [Fact]
+    public void Interleave_ThrowsArgumentNullException_WhenBuffer1IsNull()
     {
-        // Method body
+        AudioBuffer buffer2 = new AudioBuffer(2, 10);
+        Assert.Throws<ArgumentNullException>(() => AudioBuffer.Interleave(null, buffer2));
+    }
+
+    [Fact]
+    public void Interleave_ThrowsArgumentNullException_WhenBuffer2IsNull()
+    {
+        AudioBuffer buffer1 = new AudioBuffer(2, 10);
+        Assert.Throws<ArgumentNullException>(() => AudioBuffer.Interleave(buffer1, null));
+    }
+
+    [Fact]
+    public void Deinterleave_ThrowsArgumentNullException_WhenBufferIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => AudioBuffer.Deinterleave(null));
     }
 }

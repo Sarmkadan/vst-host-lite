@@ -79,6 +79,11 @@ public class AudioBuffer : IAudioBuffer
     /// <returns>A new AudioBuffer containing the samples of buffer1 followed by buffer2.</returns>
     public static AudioBuffer Interleave(AudioBuffer buffer1, AudioBuffer buffer2)
     {
+        if (buffer1 == null)
+            throw new ArgumentNullException(nameof(buffer1));
+        if (buffer2 == null)
+            throw new ArgumentNullException(nameof(buffer2));
+
         if (buffer1.Channels != buffer2.Channels)
             throw new ArgumentException("Channel counts do not match", nameof(buffer1));
 
@@ -104,6 +109,8 @@ public class AudioBuffer : IAudioBuffer
     /// <returns>A new AudioBuffer with one channel and a frame count equal to (original channels * original frames).</returns>
     public static AudioBuffer Deinterleave(AudioBuffer buffer)
     {
+        if (buffer == null)
+            throw new ArgumentNullException(nameof(buffer));
         if (buffer.Channels < 2)
             throw new ArgumentException("At least two channels required for deinterleaving", nameof(buffer));
 
