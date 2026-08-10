@@ -64,6 +64,17 @@ public static class AudioGraphJsonExtensions
     /// <param name="indented">Whether the output should be indented.</param>
     /// <returns>A JSON representation of the audio graph.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <c>null</c>.</exception>
+    /// <summary>
+    /// Serializes the <see cref="AudioGraph"/> instance to a JSON string.
+    /// </summary>
+    /// <param name="value">The audio graph to serialize.</param>
+    /// <param name="indented">Whether the output should be indented.</param>
+    /// <returns>A JSON representation of the audio graph.</returns>
+    /// <remarks>
+    /// The JSON schema consists of a list of nodes, where each node has a 'Name', 'Component', and 'NextIndex' property.
+    /// The 'NextIndex' property represents the index of the next node in the list, or -1 if there is no next node.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <c>null</c>.</exception>
     public static string ToJson(this AudioGraph value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -88,6 +99,18 @@ public static class AudioGraphJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>An <see cref="AudioGraph"/> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
+    /// <exception cref="JsonException">Thrown when the JSON is invalid or missing required data.</exception>
+    /// <summary>
+    /// Deserializes a JSON string into an <see cref="AudioGraph"/> instance.
+    /// </summary>
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <returns>An <see cref="AudioGraph"/> instance.</returns>
+    /// <remarks>
+    /// The JSON schema consists of a list of nodes, where each node has a 'Name', 'Component', and 'NextIndex' property.
+    /// The 'NextIndex' property represents the index of the next node in the list, or -1 if there is no next node.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or missing required data.</exception>
@@ -133,6 +156,17 @@ public static class AudioGraphJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">When this method returns, contains the deserialized audio graph if successful; otherwise <c>null</c>.</param>
     /// <returns><c>true</c> if deserialization succeeded; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
+    /// <summary>
+    /// Tries to deserialize a JSON string into an <see cref="AudioGraph"/> instance.
+    /// </summary>
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <param name="value">When this method returns, contains the deserialized audio graph if successful; otherwise <c>null</c>.</param>
+    /// <returns><c>true</c> if deserialization succeeded; otherwise <c>false</c>.</returns>
+    /// <remarks>
+    /// The JSON schema consists of a list of nodes, where each node has a 'Name', 'Component', and 'NextIndex' property.
+    /// The 'NextIndex' property represents the index of the next node in the list, or -1 if there is no next node.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
     public static bool TryFromJson(string json, out AudioGraph? value)
     {
