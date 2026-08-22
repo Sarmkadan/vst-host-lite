@@ -14,6 +14,18 @@ public sealed class NativeModule : IDisposable, IEquatable<NativeModule>
     private bool _disposed;
     private ExitDelegate? _exitDelegate;
 
+    /// <summary>
+    /// Gets the file system path to the loaded VST3 module.
+    /// </summary>
+    /// <value>The absolute or relative path to the VST3 module file.</value>
+    /// <summary>
+    /// Gets the file system path to the loaded VST3 module.
+    /// </summary>
+    /// <value>The absolute or relative path to the VST3 module file.</value>
+    /// <summary>
+    /// Gets the file system path to the loaded VST3 module.
+    /// </summary>
+    /// <value>The absolute or relative path to the VST3 module file.</value>
     public string Path { get; }
 
     private NativeModule(string path, nint handle, ExitDelegate? exitDelegate)
