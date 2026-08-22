@@ -5,21 +5,67 @@ using System.Runtime.InteropServices;
 namespace VstHostLite.Native;
 
 /// <summary>
-/// VST3 is a COM-like ABI: every interface is a vtable of function pointers and
-/// objects are reference counted through IUnknown-style AddRef/Release. On .NET 10
-/// we walk the vtable manually because the interfaces are C++ and there is no
-/// stable C surface. This is only the bits we needed to enumerate a factory.
+/// Provides core interoperability functionality for working with VST3 plugins.
+/// This class implements the necessary COM-style interop to enumerate VST3 plugin
+/// factories, manage interface reference counting, and handle error conditions.
+///
+/// VST3 uses a COM-like ABI where interfaces are represented as vtables (virtual
+/// function tables) and objects are reference counted through IUnknown-style
+/// AddRef/Release methods. Since VST3 interfaces are implemented in C++ and lack
+/// a stable C surface area, this class manually walks the vtable to access
+/// functionality.
+///
+/// This class does NOT:
+/// - Create or manage actual VST3 plugin instances
+/// - Handle audio processing or effect execution
+/// - Provide direct access to VST3 processor interfaces
+///
+/// It focuses solely on factory enumeration and interface querying capabilities
+/// required to discover and inspect available VST3 plugins.
 /// </summary>
+/// <remarks>
+/// When working with COM interfaces through this class:
+/// - Always verify that interface pointers are non-null before use
+/// - Properly manage reference counting using AddRef/Release
+/// - Be aware of thread affinity for COM objects
+/// - Expect HResult-style error codes from most operations
+/// </remarks>
 public class Vst3Interop : IEquatable<Vst3Interop>
 {
-    // VST3 result codes
+    /// <summary>
+    /// VST3 result code indicating a successful operation (value 0).
+    /// </summary>
     public const int kResultOk = 0;
+
+    /// <summary>
+    /// VST3 result code indicating a logical false result (value 1).
+    /// </summary>
     public const int kResultFalse = 1;
+
+    /// <summary>
+    /// VST3 result code indicating an invalid argument was provided (value 2).
+    /// </summary>
     public const int kInvalidArgument = 2;
+
+    /// <summary>
+    /// VST3 result code indicating the requested operation is not implemented (value 3).
+    /// </summary>
     public const int kNotImplemented = 3;
+
+    /// <summary>
+    /// VST3 result code indicating an internal error occurred (value 4).
+    /// </summary>
     public const int kInternalError = 4;
+
+    /// <summary>
+    /// VST3 result code indicating the object or state is not valid for the operation (value 5).
+    /// </summary>
     public const int kNotValid = 5;
-    public const int kResultTrue = -1; // Typically -1 for success in VST3
+
+    /// <summary>
+    /// VST3 result code indicating a logical true result (value -1).
+    /// </summary>
+    public const int kResultTrue = -1;
 
     // IPluginFactory::countClasses is at vtable slot 3 (after queryInterface,
     // addRef, release). Each entry is a function pointer we read by offset.
