@@ -10,6 +10,26 @@ namespace VstHostLite.Native;
 /// but wiring IAudioProcessor::process with the right ProcessData/AudioBusBuffers
 /// marshalling always crashed or produced silence.
 /// </summary>
+/// <remarks>
+/// The graph is a directed acyclic graph of <see cref="GraphNode"/> instances,
+/// each wrapping a native VST component handle. Nodes are connected into a
+/// chain via <see cref="Connect"/>, and the processing order is computed lazily
+/// with a topological sort (Kahn's algorithm). The graph is not thread-safe;
+/// callers must synchronize access.
+/// </remarks>
+/// <example>
+/// The following example creates a graph with two nodes, connects them, and
+/// retrieves the processing order:
+/// <code>
+/// var graph = new AudioGraph();
+/// var input = graph.AddNode("input", inputComponent);
+/// var output = graph.AddNode("output", outputComponent);
+/// graph.Connect(input, output);
+///
+/// IReadOnlyList&lt;GraphNode&gt; order = graph.GetProcessingOrder();
+/// IReadOnlyList&lt;int&gt; ids = graph.GetProcessingOrderIds();
+/// </code>
+/// </example>
 public sealed class AudioGraph : IAudioGraph
 {
     private readonly List<GraphNode> _nodes = new();
@@ -18,8 +38,23 @@ public sealed class AudioGraph : IAudioGraph
     private readonly Dictionary<GraphNode, int> _nodeToId = new();
     private bool _topologyDirty = true;
 
+    /// <summary>
+    /// Gets the nodes in the graph in the order they were added.
+    /// </summary>
+    /// <value>
+    /// A read-only list of the <see cref="GraphNode"/> instances that have been
+    /// added to the graph.
+    /// </value>
     public IReadOnlyList<GraphNode> Nodes => _nodes;
 
+    /// <summary>
+    /// Creates a new <see cref="GraphNode"/> with the specified name and native
+    /// component handle, adds it to the graph, and returns it.
+    /// </summary>
+    /// <param name="name">The name of the node.</param>
+    /// <param name="component">The native component handle wrapped by the node.</param>
+    /// <returns>The newly created and added <see cref="GraphNode"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is null.</exception>
     public GraphNode AddNode(string name, nint component)
     {
         var node = new GraphNode(name, component);
@@ -27,6 +62,16 @@ public sealed class AudioGraph : IAudioGraph
         return node;
     }
 
+    /// <summary>
+    /// Connects two nodes so that audio flows from <paramref name="from"/> to
+    /// <paramref name="to"/>.
+    /// </summary>
+    /// <param name="from">The source node.</param>
+    /// <param name="to">The destination node.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="from"/> and <paramref name="to"/> are the same
+    /// node, or when connecting them would create a cycle in the graph.
+    /// </exception>
     public void Connect(GraphNode from, GraphNode to)
     {
         if (from == to)
@@ -51,6 +96,11 @@ public sealed class AudioGraph : IAudioGraph
         return false;
     }
 
+    /// <summary>
+    /// Adds an existing <see cref="GraphNode"/> to the graph.
+    /// </summary>
+    /// <param name="node">The node to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/> is null.</exception>
     public void AddNode(GraphNode node)
     {
         _nodes.Add(node);
@@ -59,6 +109,16 @@ public sealed class AudioGraph : IAudioGraph
         _topologyDirty = true;
     }
 
+    /// <summary>
+    /// Gets the nodes in the order they should be processed, computing the
+    /// topological order lazily if the topology has changed since the last call.
+    /// </summary>
+    /// <returns>
+    /// A read-only list of <see cref="GraphNode"/> instances in processing order.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the graph contains a cycle and cannot be topologically sorted.
+    /// </exception>
     public IReadOnlyList<GraphNode> GetProcessingOrder()
     {
         if (_topologyDirty)
@@ -69,6 +129,16 @@ public sealed class AudioGraph : IAudioGraph
         return _processingOrder.AsReadOnly();
     }
 
+    /// <summary>
+    /// Gets the ids of the nodes in processing order.
+    /// </summary>
+    /// <returns>
+    /// A read-only list of integer ids, where each id corresponds to the node's
+    /// position in the <see cref="Nodes"/> list.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the graph contains a cycle and cannot be topologically sorted.
+    /// </exception>
     public IReadOnlyList<int> GetProcessingOrderIds()
     {
         var order = GetProcessingOrder();
@@ -80,6 +150,11 @@ public sealed class AudioGraph : IAudioGraph
         return ids.AsReadOnly();
     }
 
+    /// <summary>
+    /// Computes the topological order of nodes in the graph using Kahn's algorithm.
+    /// This method is called internally when <see cref="GetProcessingOrder"/> or
+    /// <see cref="GetProcessingOrderIds"/> is accessed and the topology is dirty.
+    /// </summary>
     private void ComputeTopologicalOrder()
     {
         _processingOrder.Clear();
