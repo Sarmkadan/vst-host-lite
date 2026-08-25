@@ -1,192 +1,24 @@
-# vst-host-lite
+## MidiEventQueue
 
-A minimal VST3 plugin host experiment in C#. The idea was to load a `.vst3`
-module, enumerate its plugin classes, instantiate a component and stream audio
-through it from the command line - no DAW, no GUI, just the smallest possible
-host.
+A thread-safe queue that stores MIDI events sorted by sample offset.
 
-**Status: shelved.** The native-interop plumbing works far enough to inspect a
-plugin, but the actual audio routing never came together. Parking it here.
+### Example usage:
 
-## What works
-
-- Loading a native VST3 module cross-platform (`NativeModule`, via
-  `NativeLibrary` + platform-specific module entry/exit points).
-- Getting the plugin factory (`GetPluginFactory`) and walking the COM-style
-  vtable by hand to call `IPluginFactory::countClasses` / `getClassInfo`.
-- Listing classes from the CLI:
-
-  ```
-  vsthost info /path/to/SomePlugin.vst3
-  ```
-
-  This prints the class count and each class name / category / CID.
-- Scanning directories for plugins:
-
-  ```
-  vsthost scan /path/to/VstPlugins
-  ```
-
-  This recursively finds `.vst3` files, lists their classes, and prints a summary.
-
-## Where it stalled
-
-`audio graph routing not working yet`.
-
-`AudioGraph.ProcessBlock` throws `NotImplementedException` on purpose. The wall
-was marshalling the VST3 `ProcessData` / `AudioBusBuffers` structures across the
-managed boundary and calling `IAudioProcessor::process` correctly:
-
-- `AudioBusBuffers` is a C++ union of `channelBuffers32` / `channelBuffers64`,
-  which are double-indirection pointers (`float**`). Getting the pinning and
-  layout right from C# was fiddly and every attempt either returned
-  `kResultFalse` or access-violated.
-- The `process()` vtable slot index differed between the components I tested, so
-  the hand-rolled vtable walk that works for the factory did not transfer.
-- I suspect a proper `setupProcessing()` / `ProcessSetup` handshake is required
-  first, plus `setActive(true)` on the component, before `process()` is legal.
-  Never confirmed.
-
-The honest summary: doing VST3's COM ABI by hand in C# is possible for the
-read-only factory calls but turns into a maintenance sink for the real-time
-processing path. The right move is probably a small C shim that exposes a flat
-C API and P/Invoke that instead - but at that point most of the interesting work
-is in C++, which defeated the point of the experiment for me. Shelved.
-
-## Layout
-
-```
-VstHostLite.sln
-src/
-  VstHostLite.Native/   native module loading + VST3 vtable interop + (stub) audio graph
-  VstHostLite.Cli/      `vsthost` command-line front end
-```
-
-## Build
-
-```
-dotnet build
-```
-
-Requires the .NET 10 SDK. Only tested on Windows-style single-file `.vst3`
-modules; the Linux/macOS bundle layout paths are written but untested.
-
-## NativeModuleExtensions
-
-Extension methods for working with native VST3 module files. `NativeModuleExtensions` provides utility methods to inspect module metadata such as file paths, version information, and timestamps.
-
-
-Example usage:
-
-```csharp
+csharp
 using System;
 using VstHostLite.Native;
 
-class Example
+public class Example
 {
-    static void Main()
+    public static void Main()
     {
-        var module = new NativeModule("C:\\VST3\\Plugin.vst3");
-        
-        // Get basic file information
-        string fileName = module.GetFileNameWithoutExtension();
-        string directory = module.GetDirectory();
-        bool isWindowsDll = module.IsWindowsDll();
-        
-        // Get file metadata
-        var versionInfo = module.GetFileVersionInfo();
-        long fileSize = module.GetFileSize();
-        DateTime lastModified = module.LastWriteTimeUtc();
-        
-        Console.WriteLine($"Module: {fileName}");
-        Console.WriteLine($"Path: {directory}");
-        Console.WriteLine($"Size: {fileSize} bytes");
-        Console.WriteLine($"Modified: {lastModified}");
-        
-        if (versionInfo.Count > 0)
+        var queue = new MidiEventQueue();
+        queue.Enqueue(MidiEvent.NoteOn(60, 100, 0));
+        queue.Enqueue(MidiEvent.NoteOff(60, 100, 100));
+        var events = queue.DequeueUpTo(100);
+        foreach (var e in events)
         {
-            Console.WriteLine("Version info:");
-            foreach (var kvp in versionInfo)
-            {
-                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
-            }
+            Console.WriteLine(e);
         }
     }
 }
-```
-
-## AudioGraph
-
-`AudioGraph` represents a directed graph of audio processing nodes that can be connected to form signal chains. Each node wraps a VST3 component and exposes the audio processing pipeline through a simple public API. The graph maintains connections between nodes via `Prev` and `Next` references, allowing you to build complex audio routing topologies.
-
-```csharp
-using System;
-using VstHostLite.Native;
-
-class Example
-{
-    static void Main()
-    {
-        // Create a graph
-        var graph = new AudioGraph { Name = "DelayReverbChain" };
-
-        // Add processing nodes
-        var inputNode = graph.AddNode("Input", (nint)0x1000);
-        var delayNode = graph.AddNode("Delay", (nint)0x2000);
-        var reverbNode = graph.AddNode("Reverb", (nint)0x3000);
-        var outputNode = graph.AddNode("Output", (nint)0x4000);
-
-        // Connect nodes in series: Input -> Delay -> Reverb -> Output
-        graph.Connect(inputNode, delayNode);
-        graph.Connect(delayNode, reverbNode);
-        graph.Connect(reverbNode, outputNode);
-
-        // Process a block of audio (throws NotImplementedException in this implementation)
-        // var inputBuffers = new float[2][256]; // stereo 256-sample buffer
-        // var outputBuffers = new float[2][256];
-        // graph.ProcessBlock(inputBuffers, outputBuffers);
-
-        Console.WriteLine($"Graph '{graph.Name}' created with {graph.Count} nodes");
-    }
-}
-```
-
-The graph supports adding nodes, connecting them via `Connect()`, and processing audio blocks through `ProcessBlock()`. Node properties include `Name` for identification, `Component` for the underlying VST3 component handle, and `Prev`/`Next` for traversing the graph structure.
-
-## PanNodeJsonExtensions
-
-`PanNodeJsonExtensions` provides JSON serialization helpers for `PanNode`, following the same pattern as the other `*JsonExtensions` helpers in the project. It serializes a pan node to a JSON string via `ToJson()`, and parses one back with `FromJson()` or the non-throwing `TryFromJson()`. The serialized shape captures the node's `Name`, `Pan` position, and `Frames` count.
-
-Example usage:
-
-```csharp
-using System;
-using VstHostLite.Native;
-
-class Example
-{
-    static void Main()
-    {
-        // Parse a pan node from JSON.
-        const string json = """{ "name": "LeadPan", "pan": -0.75, "frames": 512 }""";
-        var node = PanNodeJsonExtensions.FromJson(json);
-
-        if (node is not null)
-        {
-            Console.WriteLine($"Name:   {node.Name}");
-            Console.WriteLine($"Pan:    {node.Pan}");
-            Console.WriteLine($"Frames: {node.Frames}");
-
-            // Serialize the node back to JSON.
-            var roundTripped = node.ToJson();
-            Console.WriteLine(roundTripped);
-        }
-
-        // TryFromJson is the non-throwing variant.
-        if (PanNodeJsonExtensions.TryFromJson(json, out var parsed))
-        {
-            Console.WriteLine($"Parsed '{parsed?.Name}' successfully.");
-        }
-    }
-}
-```
