@@ -4,8 +4,18 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests
 {
+    /// <summary>
+    /// Unit tests for MixerNode covering multi-input summation,
+    /// single-input passthrough, argument validation, null-input handling,
+    /// and zero-gain silencing.
+    /// </summary>
     public class MixerNodeTests
     {
+        /// <summary>
+        /// Verifies that a two-input mixer sums its inputs sample-by-sample,
+        /// producing each output frame as the element-wise sum of the two
+        /// input buffers (e.g. 1 + 0.5 = 1.5).
+        /// </summary>
         [Fact]
         public void TwoInputs_SumCorrectly()
         {
@@ -27,6 +37,10 @@ namespace VstHostLite.Native.Tests
             Assert.Equal(expected, output);
         }
 
+        /// <summary>
+        /// Verifies that a mixer configured with a single input copies that
+        /// buffer to the output unchanged.
+        /// </summary>
         [Fact]
         public void SingleInput_Passthrough()
         {
@@ -47,6 +61,12 @@ namespace VstHostLite.Native.Tests
             Assert.Equal(expected, output);
         }
 
+        /// <summary>
+        /// Verifies that passing fewer input buffers than the mixer's
+        /// configured input count causes Process to throw an
+        /// ArgumentException whose message contains
+        /// "Expected 2 input buffers".
+        /// </summary>
         [Fact]
         public void InvalidInputCount_ThrowsArgumentException()
         {
@@ -64,6 +84,11 @@ namespace VstHostLite.Native.Tests
             Assert.Contains("Expected 2 input buffers", ex.Message);
         }
 
+        /// <summary>
+        /// Verifies that passing an input buffer whose length differs from
+        /// the configured frame count causes Process to throw an
+        /// ArgumentException whose message contains "must have 3 frames".
+        /// </summary>
         [Fact]
         public void InvalidInputBufferLength_ThrowsArgumentException()
         {
@@ -81,6 +106,10 @@ namespace VstHostLite.Native.Tests
             Assert.Contains("must have 3 frames", ex.Message);
         }
 
+        /// <summary>
+        /// Verifies that passing a null input buffer array causes Process
+        /// to throw an ArgumentNullException.
+        /// </summary>
         [Fact]
         public void NullInputs_ThrowsArgumentNullException()
         {
@@ -94,6 +123,11 @@ namespace VstHostLite.Native.Tests
             Assert.Throws<ArgumentNullException>(() => mixer.Process(inputs, output));
         }
 
+        /// <summary>
+        /// Verifies that after setting both input gains to zero, Process
+        /// writes silence (all-zero frames) to the output regardless of
+        /// the input samples.
+        /// </summary>
         [Fact]
         public void AllGainsZero_ProducesSilence()
         {
