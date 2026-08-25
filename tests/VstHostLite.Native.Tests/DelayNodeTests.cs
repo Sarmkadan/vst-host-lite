@@ -4,9 +4,20 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests
 {
+    /// <summary>
+    /// Unit tests for <see cref="DelayNode"/> covering constructor validation, property
+    /// defaults and range-checked setters, maximum delay calculation, audio processing
+    /// behaviour (passthrough, echo via feedback, dry/wet mixing) and delay buffer reset.
+    /// </summary>
     public class DelayNodeTests
     {
         [Fact]
+        /// <summary>
+        /// Tests that constructing a <see cref="DelayNode"/> with valid parameters creates an
+        /// instance whose name matches the supplied value and whose properties start at their
+        /// defaults: a quarter-second delay at the given sample rate (44100 / 4 = 11025 samples),
+        /// 0.5 feedback and 0.5 dry/wet mix.
+        /// </summary>
         public void Constructor_WithValidParameters_CreatesInstance()
         {
             // Arrange & Act
@@ -20,6 +31,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that constructing a <see cref="DelayNode"/> with a null name
+        /// throws an <see cref="ArgumentNullException"/>.
+        /// </summary>
         public void Constructor_WithNullName_ThrowsArgumentNullException()
         {
             // Arrange & Act & Assert
@@ -29,6 +44,11 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(0f)]
         [InlineData(-1f)]
+        /// <summary>
+        /// Tests that constructing a <see cref="DelayNode"/> with a zero or negative maximum
+        /// delay time throws an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="maxDelayTimeMs">An invalid non-positive maximum delay time in milliseconds.</param>
         public void Constructor_WithNonPositiveMaxDelayTime_ThrowsArgumentOutOfRangeException(float maxDelayTimeMs)
         {
             // Arrange & Act & Assert
@@ -38,6 +58,11 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
+        /// <summary>
+        /// Tests that constructing a <see cref="DelayNode"/> with a zero or negative sample
+        /// rate throws an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="sampleRate">An invalid non-positive sample rate in Hz.</param>
         public void Constructor_WithNonPositiveSampleRate_ThrowsArgumentOutOfRangeException(int sampleRate)
         {
             // Arrange & Act & Assert
@@ -47,6 +72,11 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
+        /// <summary>
+        /// Tests that constructing a <see cref="DelayNode"/> with a zero or negative frame
+        /// count throws an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="frames">An invalid non-positive number of frames per processing block.</param>
         public void Constructor_WithNonPositiveFrames_ThrowsArgumentOutOfRangeException(int frames)
         {
             // Arrange & Act & Assert
@@ -54,6 +84,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that the <see cref="DelayNode.DelaySamples"/> getter returns the default
+        /// quarter-second delay at the construction sample rate (44100 / 4 = 11025 samples).
+        /// </summary>
         public void DelaySamples_Getter_ReturnsCorrectValue()
         {
             // Arrange
@@ -67,6 +101,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that assigning a valid value to <see cref="DelayNode.DelaySamples"/>
+        /// stores and returns that value.
+        /// </summary>
         public void DelaySamples_Setter_UpdatesValue()
         {
             // Arrange
@@ -82,6 +120,12 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(-1)]
         [InlineData(1000000)]
+        /// <summary>
+        /// Tests that assigning a negative delay, or one beyond the node's maximum capacity of
+        /// 44100 samples (1000 ms at 44100 Hz), to <see cref="DelayNode.DelaySamples"/> throws
+        /// an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="delaySamples">An invalid delay below zero or above the maximum delay in samples.</param>
         public void DelaySamples_Setter_WithOutOfRangeValue_ThrowsArgumentOutOfRangeException(int delaySamples)
         {
             // Arrange
@@ -92,6 +136,9 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that the <see cref="DelayNode.Feedback"/> getter returns the default value of 0.5.
+        /// </summary>
         public void Feedback_Getter_ReturnsCorrectValue()
         {
             // Arrange
@@ -105,6 +152,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that assigning a valid value to <see cref="DelayNode.Feedback"/>
+        /// stores and returns that value.
+        /// </summary>
         public void Feedback_Setter_UpdatesValue()
         {
             // Arrange
@@ -121,6 +172,11 @@ namespace VstHostLite.Native.Tests
         [InlineData(float.NaN)]
         [InlineData(float.PositiveInfinity)]
         [InlineData(float.NegativeInfinity)]
+        /// <summary>
+        /// Tests that assigning NaN or an infinite value to <see cref="DelayNode.Feedback"/>
+        /// throws an <see cref="ArgumentException"/>.
+        /// </summary>
+        /// <param name="invalidFeedback">An invalid non-finite feedback amount.</param>
         public void Feedback_Setter_WithInvalidValue_ThrowsArgumentException(float invalidFeedback)
         {
             // Arrange
@@ -133,6 +189,11 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(-0.1f)]
         [InlineData(1.1f)]
+        /// <summary>
+        /// Tests that assigning a feedback amount outside the [0, 1] range to
+        /// <see cref="DelayNode.Feedback"/> throws an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="invalidFeedback">An invalid feedback amount below 0 or above 1.</param>
         public void Feedback_Setter_WithOutOfRangeValue_ThrowsArgumentOutOfRangeException(float invalidFeedback)
         {
             // Arrange
@@ -143,6 +204,9 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that the <see cref="DelayNode.DryWetMix"/> getter returns the default value of 0.5.
+        /// </summary>
         public void DryWetMix_Getter_ReturnsCorrectValue()
         {
             // Arrange
@@ -156,6 +220,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that assigning a valid value to <see cref="DelayNode.DryWetMix"/>
+        /// stores and returns that value.
+        /// </summary>
         public void DryWetMix_Setter_UpdatesValue()
         {
             // Arrange
@@ -172,6 +240,11 @@ namespace VstHostLite.Native.Tests
         [InlineData(float.NaN)]
         [InlineData(float.PositiveInfinity)]
         [InlineData(float.NegativeInfinity)]
+        /// <summary>
+        /// Tests that assigning NaN or an infinite value to <see cref="DelayNode.DryWetMix"/>
+        /// throws an <see cref="ArgumentException"/>.
+        /// </summary>
+        /// <param name="invalidDryWetMix">An invalid non-finite dry/wet mix ratio.</param>
         public void DryWetMix_Setter_WithInvalidValue_ThrowsArgumentException(float invalidDryWetMix)
         {
             // Arrange
@@ -184,6 +257,11 @@ namespace VstHostLite.Native.Tests
         [Theory]
         [InlineData(-0.1f)]
         [InlineData(1.1f)]
+        /// <summary>
+        /// Tests that assigning a dry/wet mix ratio outside the [0, 1] range to
+        /// <see cref="DelayNode.DryWetMix"/> throws an <see cref="ArgumentOutOfRangeException"/>.
+        /// </summary>
+        /// <param name="invalidDryWetMix">An invalid dry/wet mix ratio below 0 or above 1.</param>
         public void DryWetMix_Setter_WithOutOfRangeValue_ThrowsArgumentOutOfRangeException(float invalidDryWetMix)
         {
             // Arrange
@@ -194,6 +272,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="DelayNode.MaxDelaySamples"/> converts the configured maximum
+        /// delay time of 1000 ms into 44100 samples at a 44100 Hz sample rate.
+        /// </summary>
         public void MaxDelaySamples_ReturnsCorrectValue()
         {
             // Arrange
@@ -210,6 +292,11 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing a four-frame buffer with default settings copies the input to
+        /// the output unchanged, because the delay line starts empty so no delayed samples are
+        /// mixed into the wet signal yet.
+        /// </summary>
         public void Process_WithValidInputs_AppliesDelayEffect()
         {
             // Arrange
@@ -230,6 +317,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing with <see cref="DelayNode.DelaySamples"/> set to zero passes
+        /// the input straight through to the output without modification.
+        /// </summary>
         public void Process_WithZeroDelaySamples_ProducesPassthrough()
         {
             // Arrange
@@ -249,6 +340,11 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing a single-sample impulse with full wet mix, 0.8 feedback and a
+        /// one-sample delay produces a decaying echo of 1, 0.8, 0.64 and 0.512 across the four
+        /// output frames, each sample being the previous output scaled by the feedback amount.
+        /// </summary>
         public void Process_WithFeedback_CreatesEchoEffect()
         {
             // Arrange
@@ -277,6 +373,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that calling <c>DelayNode.Process</c> with a null input buffer
+        /// throws an <see cref="ArgumentNullException"/>.
+        /// </summary>
         public void Process_WithNullInput_ThrowsArgumentNullException()
         {
             // Arrange
@@ -290,6 +390,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that calling <c>DelayNode.Process</c> with a null output buffer
+        /// throws an <see cref="ArgumentNullException"/>.
+        /// </summary>
         public void Process_WithNullOutput_ThrowsArgumentNullException()
         {
             // Arrange
@@ -303,6 +407,11 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing with an input buffer shorter than the node's frame count
+        /// throws an <see cref="ArgumentException"/> whose message states the required
+        /// frame count ("must have 4 frames").
+        /// </summary>
         public void Process_WithMismatchedInputLength_ThrowsArgumentException()
         {
             // Arrange
@@ -318,6 +427,11 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing with an output buffer shorter than the node's frame count
+        /// throws an <see cref="ArgumentException"/> whose message states the required
+        /// frame count ("must have 4 frames").
+        /// </summary>
         public void Process_WithMismatchedOutputLength_ThrowsArgumentException()
         {
             // Arrange
@@ -333,6 +447,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="DelayNode.Reset"/> clears the internal delay buffer so that
+        /// processing the same input again produces output identical to the first pass.
+        /// </summary>
         public void Reset_ClearsDelayBuffer()
         {
             // Arrange
@@ -359,6 +477,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing with a 0.75 dry/wet mix and zero delay yields the unmodified
+        /// input, because the dry and wet contributions sum back to the original sample values.
+        /// </summary>
         public void Process_WithDryWetMix_AppliesCorrectMix()
         {
             // Arrange
@@ -381,6 +503,10 @@ namespace VstHostLite.Native.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that processing with a 100-sample delay completes without error and fills the
+        /// output buffer with the expected number of frames.
+        /// </summary>
         public void Process_WithDelaySamples_WorksCorrectly()
         {
             // Arrange
