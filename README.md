@@ -164,3 +164,37 @@ public class Example
     }
 }
 ```
+
+## AudioGraphExtensionsJsonExtensions
+
+`AudioGraphExtensionsJsonExtensions` pairs a lightweight graph descriptor with static JSON helpers for `AudioGraph`. Each instance carries a `Name`, a native `Component` handle, and a mutable `NextIndex` counter, while the static `ToJson`, `FromJson`, and `TryFromJson` members convert audio graphs to and from JSON text. Prefer `TryFromJson` when the input may be malformed, since it reports success through its return value instead of throwing.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        var descriptor = new AudioGraphExtensionsJsonExtensions
+        {
+            Name = "master-graph",
+            Component = 7,
+        };
+
+        Console.WriteLine($"{descriptor.Name}: component {descriptor.Component}, next index {descriptor.NextIndex}");
+
+        // Parse a graph from JSON, then serialize it back out.
+        var graph = AudioGraphExtensionsJsonExtensions.FromJson("{ \"Name\": \"graph\", \"Component\": 1 }");
+        string json = AudioGraphExtensionsJsonExtensions.ToJson(graph);
+
+        if (AudioGraphExtensionsJsonExtensions.TryFromJson(json, out var copy))
+        {
+            Console.WriteLine("Round-trip succeeded");
+        }
+    }
+}
+```
