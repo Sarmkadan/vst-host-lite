@@ -4,7 +4,7 @@ A thread-safe queue that stores MIDI events sorted by sample offset.
 
 ### Example usage:
 
-csharp
+```csharp
 using System;
 using VstHostLite.Native;
 
@@ -100,6 +100,37 @@ public class Example
         // Reuse the original buffer: copy the restored samples, then wipe it.
         buffer.CopyFrom(restored);
         buffer.Clear();
+    }
+}
+```
+
+## ClipDetector
+
+The `ClipDetector` static class provides methods to detect clipping in audio buffers. It scans float arrays or `AudioBuffer` instances and returns a `ClipDetectionResult` containing the number of clipped samples, the maximum absolute value found, and the index of the first clipped sample (or -1 if none). The detection threshold is configurable, defaulting to 1.0f.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Example 1: Detect clipping in a float array
+        float[] samples = { 0.5f, 1.2f, -0.3f, 1.5f };
+        var result = ClipDetector.Detect(samples);
+        Console.WriteLine($"Clipped: {result.ClippedSampleCount}, Max: {result.MaxAbsoluteValue}, First: {result.FirstClipIndex}");
+
+        // Example 2: Detect clipping in an AudioBuffer
+        var buffer = new AudioBuffer(2, 2); // 2 channels, 2 frames
+        buffer[0, 0] = 0.5f;
+        buffer[1, 0] = 1.1f; // clipped
+        buffer[0, 1] = -0.2f;
+        buffer[1, 1] = 0.8f;
+        var result2 = ClipDetector.Detect(buffer);
+        Console.WriteLine(result2.ToString());
     }
 }
 ```
