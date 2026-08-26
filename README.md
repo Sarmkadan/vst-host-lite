@@ -24,6 +24,36 @@ public class Example
 }
 ```
 
+## PluginScanCacheTests
+
+`PluginScanCacheTests` is the xUnit test suite for `PluginScanCache`, exercising the plugin scan cache end to end. Its facts verify that `TryGetFresh` returns false for missing plugins and stale entries, that results saved with `Save` survive a `TryGetFresh` round-trip unchanged, and that `Clear` and `ClearAll` remove the corresponding `.vst3.cache.json` files. Since every fact is a parameterless instance method, they can be invoked individually, and the type also exposes value-style equality via `Equals` and the `==`/`!=` operators.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new PluginScanCacheTests();
+
+        tests.TryGetFresh_ReturnsFalse_WhenPluginDoesNotExist();
+        tests.SaveAndTryGetFresh_RoundtripWorks();
+        tests.TryGetFresh_ReturnsFalse_WhenCacheIsStale();
+        tests.Clear_RemovesCacheFile();
+        tests.ClearAll_RemovesAllCacheFiles();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new PluginScanCacheTests());
+    }
+}
+```
+
 ## MixerNode
 
 `MixerNode` sums multiple input audio buffers into a single output buffer, applying a per-input gain that can be adjusted at runtime with `SetGain` and read back with `GetGain`. Each node has a read-only `Name` for identification and is constructed with a name, an input count, and a fixed frame count. Call `Process` once per audio cycle with an array of input buffers and an output buffer of matching length to produce the mixed result.
