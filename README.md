@@ -61,3 +61,45 @@ public class Example
         }
     }
 }
+```
+
+## AudioBuffer
+
+`AudioBuffer` holds a fixed-size block of multichannel audio whose shape is described by its read-only `Channels` and `Frames` properties. Samples can be wiped with `Clear`, copied from another buffer with `CopyFrom`, and exported as a single packed `float[]` with `ToFlatArray`. The static `Interleave` and `Deinterleave` factories convert between separate per-channel arrays and packed sample buffers.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        // A stereo buffer with 256 frames per channel.
+        var buffer = new AudioBuffer(2, 256);
+
+        Console.WriteLine($"{buffer.Channels} channels x {buffer.Frames} frames");
+
+        // Build two mono channels and pack them into a single buffer.
+        var left = new float[buffer.Frames];
+        var right = new float[buffer.Frames];
+        for (int i = 0; i < buffer.Frames; i++)
+        {
+            left[i] = MathF.Sin(i * 0.02f);
+            right[i] = 0.5f * left[i];
+        }
+
+        var interleaved = AudioBuffer.Interleave(new[] { left, right });
+
+        // Export the packed samples, then split them back into channels.
+        float[] flat = interleaved.ToFlatArray();
+        var restored = AudioBuffer.Deinterleave(flat, interleaved.Channels);
+
+        // Reuse the original buffer: copy the restored samples, then wipe it.
+        buffer.CopyFrom(restored);
+        buffer.Clear();
+    }
+}
+```
