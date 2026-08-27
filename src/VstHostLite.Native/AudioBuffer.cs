@@ -31,6 +31,43 @@ public class AudioBuffer : IAudioBuffer
     }
 
     /// <summary>
+    /// Creates a new audio buffer with the specified number of channels and frames.
+    /// </summary>
+    /// <param name="channels">The number of channels in the buffer. Must be non-negative.</param>
+    /// <param name="frames">The number of frames (samples per channel) in the buffer. Must be non-negative.</param>
+    /// <returns>A new AudioBuffer instance.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when channels or frames are negative.</exception>
+    public static AudioBuffer Create(int channels, int frames)
+    {
+        if (channels < 0)
+            throw new ArgumentOutOfRangeException(nameof(channels), "Channels must be non-negative.");
+        if (frames < 0)
+            throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be non-negative.");
+
+        return new AudioBuffer(channels, frames);
+    }
+
+    /// <summary>
+    /// Creates a new audio buffer with the specified number of channels, frames, and sample rate.
+    /// </summary>
+    /// <param name="channels">The number of channels in the buffer. Must be non-negative.</param>
+    /// <param name="frames">The number of frames (samples per channel) in the buffer. Must be non-negative.</param>
+    /// <param name="sampleRate">The sample rate in Hz. Must be positive.</param>
+    /// <returns>A new AudioBuffer instance.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when channels or frames are negative, or sampleRate is not positive.</exception>
+    public static AudioBuffer Create(int channels, int frames, int sampleRate)
+    {
+        if (channels < 0)
+            throw new ArgumentOutOfRangeException(nameof(channels), "Channels must be non-negative.");
+        if (frames < 0)
+            throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be non-negative.");
+        if (sampleRate <= 0)
+            throw new ArgumentOutOfRangeException(nameof(sampleRate), "Sample rate must be positive.");
+
+        return new AudioBuffer(channels, frames);
+    }
+
+    /// <summary>
     /// Sets all samples in the buffer to zero.
     /// </summary>
     public void Clear()

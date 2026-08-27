@@ -18,7 +18,7 @@ namespace VstHostLite.Native
         {
             ArgumentNullException.ThrowIfNull(buffer);
 
-            var clone = new AudioBuffer(buffer.Channels, buffer.Frames);
+            var clone = AudioBuffer.Create(buffer.Channels, buffer.Frames);
             Array.Copy(buffer.ToFlatArray(), clone.ToFlatArray(), buffer.ToFlatArray().Length);
             return clone;
         }
@@ -90,7 +90,7 @@ namespace VstHostLite.Native
 
             for (int channel = 0; channel < buffer.Channels; channel++)
             {
-                var channelBuffer = new AudioBuffer(1, buffer.Frames);
+                var channelBuffer = AudioBuffer.Create(1, buffer.Frames);
                 for (int frame = 0; frame < buffer.Frames; frame++)
                 {
                     channelBuffer[0, frame] = buffer[channel, frame];
