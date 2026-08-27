@@ -4,8 +4,15 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+/// <summary>
+/// Contains tests for error handling and edge cases in the NativeModule class.
+/// </summary>
 public class NativeModuleErrorTests
 {
+    /// <summary>
+    /// Verifies that attempting to load a nonexistent path throws a FileNotFoundException
+    /// with the expected message and file name.
+    /// </summary>
     [Fact]
     public void Load_NonexistentPath_ThrowsFileNotFoundException()
     {
@@ -18,6 +25,10 @@ public class NativeModuleErrorTests
         Assert.Equal(nonExistentPath, exception.FileName);
     }
 
+    /// <summary>
+    /// Verifies that attempting to load a path that cannot be found (does not exist)
+    /// throws a FileNotFoundException before any native loading is attempted.
+    /// </summary>
     [Fact]
     public void Load_PathThatCannotBeLoaded_ThrowsFileNotFoundException()
     {
@@ -34,6 +45,9 @@ public class NativeModuleErrorTests
         Assert.Equal("VST3 module not found", exception.Message);
     }
 
+    /// <summary>
+    /// Verifies that the Dispose method is safe to call multiple times due to its guard clause.
+    /// </summary>
     [Fact]
     public void Dispose_MultipleTimes_IsSafe()
     {
@@ -49,6 +63,9 @@ public class NativeModuleErrorTests
         Assert.True(true, "Dispose method has guard clause for _handle == 0");
     }
 
+    /// <summary>
+    /// Verifies that calling Dispose multiple times does not throw an exception.
+    /// </summary>
     [Fact]
     public void Dispose_DoesNotThrowOnSubsequentCalls()
     {
@@ -60,6 +77,9 @@ public class NativeModuleErrorTests
         Assert.True(true, "Dispose pattern is safe for multiple calls");
     }
 
+    /// <summary>
+    /// Verifies that attempting to load an empty string path throws a FileNotFoundException.
+    /// </summary>
     [Fact]
     public void Load_WithEmptyPath_ThrowsFileNotFoundException()
     {
@@ -71,6 +91,9 @@ public class NativeModuleErrorTests
         Assert.Equal("VST3 module not found", exception.Message);
     }
 
+    /// <summary>
+    /// Verifies that attempting to load a whitespace-only path throws a FileNotFoundException.
+    /// </summary>
     [Fact]
     public void Load_WithWhitespacePath_ThrowsFileNotFoundException()
     {
@@ -82,6 +105,9 @@ public class NativeModuleErrorTests
         Assert.Equal("VST3 module not found", exception.Message);
     }
 
+    /// <summary>
+    /// Verifies that the NativeModule class has a public Path property of type string.
+    /// </summary>
     [Fact]
     public void PathProperty_ReturnsCorrectPath()
     {
@@ -94,5 +120,4 @@ public class NativeModuleErrorTests
         Assert.NotNull(typeof(NativeModule).GetProperty("Path"));
         Assert.Equal(typeof(string), typeof(NativeModule).GetProperty("Path")?.PropertyType);
     }
-
 }
