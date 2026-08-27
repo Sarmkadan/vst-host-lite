@@ -1,11 +1,18 @@
-using Xunit;
 using System;
 using System.Collections.Generic;
+using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+/// <summary>
+/// Contains unit tests for the VST3 interop functionality, including class counting,
+/// class info retrieval, plugin class info handling, and plugin filtering operations.
+/// </summary>
 public class Vst3InteropTests
 {
+    /// <summary>
+    /// Tests that CountClasses returns zero when the factory pointer is null.
+    /// </summary>
     [Fact]
     public void CountClasses_WithNullFactory_ReturnsZero()
     {
@@ -16,6 +23,9 @@ public class Vst3InteropTests
         Assert.Equal(0, result);
     }
 
+    /// <summary>
+    /// Tests that CountClasses handles a valid factory pointer (though null is passed in the test) and returns a non-negative count.
+    /// </summary>
     [Fact]
     public void CountClasses_WithValidFactory_ReturnsNonNegativeCount()
     {
@@ -30,6 +40,9 @@ public class Vst3InteropTests
         Assert.Equal(0, result);
     }
 
+    /// <summary>
+    /// Tests that GetClassInfo throws an AccessViolationException when the factory pointer is null.
+    /// </summary>
     [Fact]
     public void GetClassInfo_WithNullFactory_ThrowsAccessViolationException()
     {
@@ -43,6 +56,9 @@ public class Vst3InteropTests
         Assert.Throws<AccessViolationException>(() => Vst3Interop.GetClassInfo(factory, index));
     }
 
+    /// <summary>
+    /// Tests that GetClassInfo throws an AccessViolationException when the class index is negative.
+    /// </summary>
     [Fact]
     public void GetClassInfo_WithNegativeIndex_ThrowsAccessViolationException()
     {
@@ -56,6 +72,9 @@ public class Vst3InteropTests
         Assert.Throws<AccessViolationException>(() => Vst3Interop.GetClassInfo(factory, index));
     }
 
+    /// <summary>
+    /// Tests that GetClassInfo throws an AccessViolationException for a valid class index when the factory pointer is null.
+    /// </summary>
     [Fact]
     public void GetClassInfo_WithValidIndex_ThrowsAccessViolationException()
     {
@@ -67,6 +86,9 @@ public class Vst3InteropTests
         Assert.Throws<AccessViolationException>(() => Vst3Interop.GetClassInfo(factory, index));
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo constructor correctly sets the Cid, Category, and Name properties when provided with valid parameters.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_WithValidParameters_CreatesCorrectInstance()
     {
@@ -84,6 +106,9 @@ public class Vst3InteropTests
         Assert.Equal(name, info.Name);
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo constructor can be invoked with empty strings, resulting in empty property values.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_WithEmptyStrings_CreatesInstance()
     {
@@ -101,6 +126,9 @@ public class Vst3InteropTests
         Assert.Equal("", info.Name);
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo constructor can be invoked with null strings, resulting in null property values.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_WithNullStrings_CreatesInstance()
     {
@@ -118,6 +146,9 @@ public class Vst3InteropTests
         Assert.Null(info.Name);
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo class correctly implements equality comparison, including the Equals method and the == and != operators.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_ImplementsEqualityCorrectly()
     {
@@ -134,6 +165,9 @@ public class Vst3InteropTests
         Assert.False(info1.Equals(info3));
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo class returns the same hash code for two instances that are equal.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_GetHashCode_ReturnsConsistentValue()
     {
@@ -145,6 +179,9 @@ public class Vst3InteropTests
         Assert.Equal(info1.GetHashCode(), info2.GetHashCode());
     }
 
+    /// <summary>
+    /// Tests that the PluginClassInfo.ToString method returns a string containing the Cid, Category, and Name values.
+    /// </summary>
     [Fact]
     public void PluginClassInfo_ToString_ReturnsFormattedString()
     {
@@ -160,6 +197,9 @@ public class Vst3InteropTests
         Assert.Contains("Test Plugin", str);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses throws an ArgumentNullException when the input list of plugin class information is null.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithNullInputAndNullFilter_ThrowsArgumentNullException()
     {
@@ -170,6 +210,9 @@ public class Vst3InteropTests
         Assert.Throws<ArgumentNullException>(() => Vst3Interop.FilterPluginClasses(infos, null, null));
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns an empty list when given an empty collection and null name and category filters.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithEmptyCollectionAndNullFilter_ReturnsEmptyList()
     {
@@ -183,6 +226,9 @@ public class Vst3InteropTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns all items in the collection when both name and category filters are null.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithValidCollectionAndNullFilter_ReturnsAllItems()
     {
@@ -202,6 +248,9 @@ public class Vst3InteropTests
         Assert.Equal(infos, result);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns items whose Name property contains the specified filter string (case-sensitive).
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithNameFilter_ReturnsMatchingItems()
     {
@@ -222,6 +271,9 @@ public class Vst3InteropTests
         Assert.Contains(result, i => i.Name == "Test Effect");
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns items whose Name property contains the specified filter string, ignoring case.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithCaseInsensitiveNameFilter_ReturnsMatchingItems()
     {
@@ -240,6 +292,9 @@ public class Vst3InteropTests
         Assert.Equal(2, result.Count);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns items whose Category property matches the specified filter string.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithCategoryFilter_ReturnsMatchingItems()
     {
@@ -259,6 +314,9 @@ public class Vst3InteropTests
         Assert.Equal("Plugin1", result[0].Name);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns items whose Category property matches the specified filter string, ignoring case.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithCaseInsensitiveCategoryFilter_ReturnsMatchingItems()
     {
@@ -277,6 +335,9 @@ public class Vst3InteropTests
         Assert.Equal("Plugin1", result[0].Name);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns items that match both the specified name filter and category filter.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithBothFilters_ReturnsIntersection()
     {
@@ -296,6 +357,9 @@ public class Vst3InteropTests
         Assert.Equal("Test Plugin", result[0].Name);
     }
 
+    /// <summary>
+    /// Tests that FilterPluginClasses returns an empty list when no items match the specified name and category filters.
+    /// </summary>
     [Fact]
     public void FilterPluginClasses_WithNonMatchingFilters_ReturnsEmptyList()
     {
