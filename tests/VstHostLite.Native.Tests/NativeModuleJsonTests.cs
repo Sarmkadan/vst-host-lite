@@ -5,8 +5,14 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+    /// <summary>
+    /// Tests for the NativeModuleJsonExtensions class.
+    /// </summary>
 public class NativeModuleJsonTests
 {
+    /// <summary>
+    /// Tests that FromJson returns a NativeModule when given valid JSON with an existing path.
+    /// </summary>
     [Fact]
     public void FromJson_WithValidJson_ReturnsNativeModule()
     {
@@ -23,6 +29,9 @@ public class NativeModuleJsonTests
         module.Dispose();
     }
 
+    /// <summary>
+    /// Tests that FromJson throws ArgumentNullException when json is null.
+    /// </summary>
     [Fact]
     public void FromJson_WithNullJson_ThrowsArgumentNullException()
     {
@@ -34,6 +43,9 @@ public class NativeModuleJsonTests
         Assert.Equal("json", exception.ParamName);
     }
 
+    /// <summary>
+    /// Tests that FromJson throws ArgumentException when json is empty.
+    /// </summary>
     [Fact]
     public void FromJson_WithEmptyJson_ThrowsArgumentException()
     {
@@ -45,6 +57,9 @@ public class NativeModuleJsonTests
         Assert.Equal("json", exception.ParamName);
     }
 
+    /// <summary>
+    /// Tests that FromJson throws ArgumentException when json is only whitespace.
+    /// </summary>
     [Fact]
     public void FromJson_WithWhitespaceJson_ThrowsArgumentException()
     {
@@ -56,6 +71,9 @@ public class NativeModuleJsonTests
         Assert.Equal("json", exception.ParamName);
     }
 
+    /// <summary>
+    /// Tests that FromJson throws JsonException when json is invalid.
+    /// </summary>
     [Fact]
     public void FromJson_WithInvalidJson_ThrowsJsonException()
     {
@@ -66,6 +84,9 @@ public class NativeModuleJsonTests
         Assert.Throws<JsonException>(() => NativeModuleJsonExtensions.FromJson(json));
     }
 
+    /// <summary>
+    /// Tests that FromJson throws JsonException when the JSON is missing the "path" property.
+    /// </summary>
     [Fact]
     public void FromJson_WithMissingPathProperty_ThrowsJsonException()
     {
@@ -76,6 +97,9 @@ public class NativeModuleJsonTests
         Assert.Throws<JsonException>(() => NativeModuleJsonExtensions.FromJson(json));
     }
 
+    /// <summary>
+    /// Tests that TryFromJson returns true and a module when given valid JSON.
+    /// </summary>
     [Fact]
     public void TryFromJson_WithValidJson_ReturnsTrueAndModule()
     {
@@ -93,6 +117,9 @@ public class NativeModuleJsonTests
         module?.Dispose();
     }
 
+    /// <summary>
+    /// Tests that TryFromJson returns false and null when given invalid JSON.
+    /// </summary>
     [Fact]
     public void TryFromJson_WithInvalidJson_ReturnsFalseAndNull()
     {
@@ -107,6 +134,9 @@ public class NativeModuleJsonTests
         Assert.Null(module);
     }
 
+    /// <summary>
+    /// Tests that TryFromJson throws ArgumentNullException when json is null.
+    /// </summary>
     [Fact]
     public void TryFromJson_WithNullJson_ThrowsArgumentNullException()
     {
@@ -119,6 +149,9 @@ public class NativeModuleJsonTests
         Assert.Equal("json", exception.ParamName);
     }
 
+    /// <summary>
+    /// Tests that serializing and then deserializing preserves the path.
+    /// </summary>
     [Fact]
     public void Roundtrip_SerializationDeserialization_PreservesPath()
     {
@@ -138,6 +171,9 @@ public class NativeModuleJsonTests
         moduleBack.Dispose();
     }
 
+    /// <summary>
+    /// Tests that serializing and then deserializing with indented JSON preserves the path.
+    /// </summary>
     [Fact]
     public void Roundtrip_WithIndentedSerialization_PreservesPath()
     {
@@ -157,6 +193,9 @@ public class NativeModuleJsonTests
         moduleBack.Dispose();
     }
 
+    /// <summary>
+    /// Tests that ToJson produces camelCase property names.
+    /// </summary>
     [Fact]
     public void ToJson_ProducesCamelCaseProperties()
     {
@@ -173,6 +212,9 @@ public class NativeModuleJsonTests
         module.Dispose();
     }
 
+    /// <summary>
+    /// Tests that ToJson with indented true returns formatted JSON (starts with "{\n").
+    /// </summary>
     [Fact]
     public void ToJson_WithIndentedTrue_ReturnsFormattedJson()
     {
@@ -190,6 +232,9 @@ public class NativeModuleJsonTests
         module.Dispose();
     }
 
+    /// <summary>
+    /// Tests that FromJson throws FileNotFoundException when the path does not exist.
+    /// </summary>
     [Fact]
     public void FromJson_WithNonExistentPath_ThrowsFileNotFoundException()
     {
@@ -202,6 +247,9 @@ public class NativeModuleJsonTests
         Assert.Throws<FileNotFoundException>(() => NativeModuleJsonExtensions.FromJson(json));
     }
 
+    /// <summary>
+    /// Tests that TryFromJson returns false when the path does not exist.
+    /// </summary>
     [Fact]
     public void TryFromJson_WithNonExistentPath_ReturnsFalse()
     {
@@ -217,6 +265,9 @@ public class NativeModuleJsonTests
         Assert.Null(module);
     }
 
+    /// <summary>
+    /// Tests that the JSON produced by ToJson matches the expected format (starts and ends with braces, contains "path" and the testDllPath).
+    /// </summary>
     [Fact]
     public void DtoSerializationShape_MatchesExpectedFormat()
     {
@@ -235,6 +286,9 @@ public class NativeModuleJsonTests
         module.Dispose();
     }
 
+    /// <summary>
+    /// Tests that ToJson throws ArgumentNullException when the module is null.
+    /// </summary>
     [Fact]
     public void ToJson_WithNullModule_ThrowsArgumentNullException()
     {
