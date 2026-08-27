@@ -4,8 +4,14 @@ using Xunit;
 
 namespace VstHostLite.Native.Tests;
 
+/// <summary>
+/// Contains tests for the <see cref="AudioGraph"/> extension methods.
+/// </summary>
 public class AudioGraphExtensionsTests
 {
+    /// <summary>
+    /// Tests that RemoveNode removes a node from the graph when the node has both previous and next nodes.
+    /// </summary>
     [Fact]
     public void RemoveNode_RemovesNodeFromGraph_WhenNodeHasBothPrevAndNext()
     {
@@ -29,6 +35,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node2.Next);
     }
 
+    /// <summary>
+    /// Tests that RemoveNode removes a node from the graph when the node has only a previous node.
+    /// </summary>
     [Fact]
     public void RemoveNode_RemovesNodeFromGraph_WhenNodeHasOnlyPrev()
     {
@@ -49,6 +58,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node2.Next);
     }
 
+    /// <summary>
+    /// Tests that RemoveNode removes a node from the graph when the node has only a next node.
+    /// </summary>
     [Fact]
     public void RemoveNode_RemovesNodeFromGraph_WhenNodeHasOnlyNext()
     {
@@ -69,6 +81,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node1.Next);
     }
 
+    /// <summary>
+    /// Tests that RemoveNode removes the first node from the graph.
+    /// </summary>
     [Fact]
     public void RemoveNode_RemovesFirstNodeFromGraph()
     {
@@ -92,6 +107,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node1.Next);
     }
 
+    /// <summary>
+    /// Tests that RemoveNode removes the last node from the graph.
+    /// </summary>
     [Fact]
     public void RemoveNode_RemovesLastNodeFromGraph()
     {
@@ -114,6 +132,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node3.Next);
     }
 
+    /// <summary>
+    /// Tests that RemoveNode throws ArgumentNullException when the graph is null.
+    /// </summary>
     [Fact]
     public void RemoveNode_ThrowsArgumentNullException_WhenGraphIsNull()
     {
@@ -125,6 +146,9 @@ public class AudioGraphExtensionsTests
         Assert.Throws<ArgumentNullException>(() => graph!.RemoveNode(node));
     }
 
+    /// <summary>
+    /// Tests that RemoveNode throws ArgumentNullException when the node is null.
+    /// </summary>
     [Fact]
     public void RemoveNode_ThrowsArgumentNullException_WhenNodeIsNull()
     {
@@ -136,6 +160,9 @@ public class AudioGraphExtensionsTests
         Assert.Throws<ArgumentNullException>(() => graph.RemoveNode(node!));
     }
 
+    /// <summary>
+    /// Tests that RemoveNode throws ArgumentException when the node is not part of the graph.
+    /// </summary>
     [Fact]
     public void RemoveNode_ThrowsArgumentException_WhenNodeNotInGraph()
     {
@@ -149,6 +176,9 @@ public class AudioGraphExtensionsTests
         Assert.Contains("not part of the graph", exception.Message);
     }
 
+    /// <summary>
+    /// Tests that Clear removes all nodes from the graph.
+    /// </summary>
     [Fact]
     public void Clear_RemovesAllNodesFromGraph()
     {
@@ -173,6 +203,9 @@ public class AudioGraphExtensionsTests
         Assert.Null(node3.Next);
     }
 
+    /// <summary>
+    /// Tests that Clear handles an empty graph correctly.
+    /// </summary>
     [Fact]
     public void Clear_HandlesEmptyGraph()
     {
@@ -186,6 +219,9 @@ public class AudioGraphExtensionsTests
         Assert.Empty(graph.Nodes);
     }
 
+    /// <summary>
+    /// Tests that Clear throws ArgumentNullException when the graph is null.
+    /// </summary>
     [Fact]
     public void Clear_ThrowsArgumentNullException_WhenGraphIsNull()
     {
@@ -196,6 +232,9 @@ public class AudioGraphExtensionsTests
         Assert.Throws<ArgumentNullException>(() => graph!.Clear());
     }
 
+    /// <summary>
+    /// Tests that GetNodesInOrder returns nodes in sequential order when the graph has multiple nodes.
+    /// </summary>
     [Fact]
     public void GetNodesInOrder_ReturnsNodesInSequentialOrder()
     {
@@ -217,6 +256,9 @@ public class AudioGraphExtensionsTests
         Assert.Equal(node3, nodesInOrder.ElementAt(2));
     }
 
+    /// <summary>
+    /// Tests that GetNodesInOrder returns a single node when the graph has only one node.
+    /// </summary>
     [Fact]
     public void GetNodesInOrder_ReturnsSingleNode()
     {
