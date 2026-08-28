@@ -425,3 +425,48 @@ public class Example
     }
 }
 ```
+
+## AudioBufferTests
+
+`AudioBufferTests` is the xUnit test suite for `AudioBuffer`, exercising constructor validation, data manipulation, and indexer behavior. Its facts verify correct buffer creation with various parameters, data clearing, copying between buffers, flat array conversion, and indexer access with proper bounds checking. Since every fact is a parameterless instance method, they can be invoked individually.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new AudioBufferTests();
+
+        tests.Constructor_WithZeroChannels_CreatesBufferWithCorrectDimensions();
+        tests.Constructor_WithNegativeChannels_ThrowsOverflowException();
+        tests.Constructor_WithZeroFrames_CreatesBufferWithCorrectDimensions();
+        tests.Constructor_WithNegativeFrames_ThrowsOverflowException();
+        tests.Constructor_WithValidParameters_CreatesBufferWithCorrectDimensions();
+        tests.Constructor_WithValidParameters_CreatesBufferWithZeroedData();
+        tests.Clear_WhenCalled_SetsAllSamplesToZero();
+        tests.CopyFrom_WithNullBuffer_ThrowsArgumentNullException();
+        tests.CopyFrom_WithDifferentChannels_ThrowsArgumentException();
+        tests.CopyFrom_WithDifferentFrames_ThrowsArgumentException();
+        tests.CopyFrom_WithSameDimensions_CopiesAllData();
+        tests.ToFlatArray_ReturnsCopyOfInternalBuffer();
+        tests.Indexer_Get_WithValidIndices_ReturnsCorrectValue();
+        tests.Indexer_Get_WithNegativeChannel_ThrowsIndexOutOfRangeException();
+        tests.Indexer_Get_WithChannelTooLarge_ThrowsIndexOutOfRangeException();
+        tests.Indexer_Get_WithNegativeFrame_ThrowsIndexOutOfRangeException();
+        tests.Indexer_Get_WithFrameTooLarge_ThrowsIndexOutOfRangeException();
+        tests.Indexer_Set_WithValidIndices_SetsCorrectValue();
+        tests.Indexer_Set_WithNegativeChannel_ThrowsIndexOutOfRangeException();
+        tests.Indexer_Set_WithChannelTooLarge_ThrowsIndexOutOfRangeException();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new AudioBufferTests());
+    }
+}
+```
