@@ -592,3 +592,33 @@ public class Example
     }
 }
 ```
+
+## CliArgsTestsValidation
+`CliArgsTestsValidation` provides static validation helpers for command-line argument testing scenarios in the VstHostLite CLI test suite. It offers methods to validate, check validity, and ensure validity of both `CliArgsTests` instances and string arrays representing command-line arguments.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Cli.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Validate a CliArgsTests instance
+        var tests = new CliArgsTests();
+        var problems = tests.Validate();
+        bool isValid = tests.IsValid();
+        
+        // Validate command-line argument arrays
+        string[] args = { "--input", "test.wav", "--output", "result.wav" };
+        var argProblems = args.Validate();
+        bool argsAreValid = args.IsValid();
+        
+        // Throw exception if validation fails
+        args.EnsureValid(); // Won't throw for valid args
+        tests.EnsureValid(); // Won't throw for valid tests
+    }
+}
+```
