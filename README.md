@@ -564,3 +564,31 @@ public class Example
     }
 }
 ```
+
+## AudioGraphExtensionsTests
+`AudioGraphExtensionsTests` is the xUnit test suite for the extension methods of `AudioGraph`, verifying correct behavior for graph manipulation operations like adding/removing nodes, clearing graphs, and querying node order and components. Each fact is a parameterless instance method that can be invoked individually.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new AudioGraphExtensionsTests();
+
+        tests.RemoveNode_RemovesNodeFromGraph_WhenNodeHasBothPrevAndNext();
+        tests.Clear_RemovesAllNodesFromGraph();
+        tests.GetNodesInOrder_ReturnsNodesInSequentialOrder();
+        tests.FindNodeByComponent_ReturnsNull_WhenComponentNotFound();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new AudioGraphExtensionsTests());
+    }
+}
+```
