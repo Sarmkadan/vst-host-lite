@@ -498,3 +498,33 @@ public class Example
     }
 }
 ```
+
+## NativeModuleCacheTests
+
+`NativeModuleCacheTests` is the xUnit test suite for `NativeModuleCache`, exercising the reference counting and caching behavior. Its facts verify that acquiring a new module loads and caches it, that releasing a module when the reference count reaches zero disposes it, that clearing the cache removes all cached modules, that getting the reference count for a non-cached module returns -1, and that releasing a module not in the cache disposes it directly. Since every fact is a parameterless instance method, they can be invoked individually, and the type also exposes value-style equality via `Equals` and the `==`/`!=` operators.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new NativeModuleCacheTests();
+
+        tests.Acquire_NewModule_LoadsAndCachesIt();
+        tests.Acquire_ReleasesWhenRefCountReachesZero();
+        tests.Clear_RemovesAllCachedModules();
+        tests.GetRefCount_ReturnsMinusOneForNonCachedModule();
+        tests.Release_ModuleNotInCache_DisposesItDirectly();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new NativeModuleCacheTests());
+    }
+}
+```
