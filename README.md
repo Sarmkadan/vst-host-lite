@@ -198,3 +198,31 @@ public class Example
     }
 }
 ```
+
+## AudioGraphTests
+
+`AudioGraphTests` is the xUnit test suite for `AudioGraph`, exercising the core graph operations such as adding nodes, connecting nodes, merging graphs, and removing nodes. Each fact is a parameterless instance method that can be invoked individually to verify specific behavior.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new AudioGraphTests();
+
+        tests.AddNode_AddsNodeToGraph();
+        tests.Connect_ConnectsTwoNodes();
+        tests.Merge_ImportsNodesWithPrefixedNames();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new AudioGraphTests());
+    }
+}
+```
