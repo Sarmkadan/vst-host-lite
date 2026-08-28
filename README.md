@@ -199,6 +199,51 @@ public class Example
 }
 ```
 
+## NativeModuleCache
+
+The `NativeModuleCache` static class provides a thread-safe cache for `NativeModule` instances with reference counting. It ensures that a module loaded from a given path is only loaded once, and multiple callers can acquire the same module. The module is automatically disposed when the last reference is released.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        string modulePath = @"C:\Plugins\MyPlugin.vst3";
+        
+        // Acquire the module (loads if not cached, increments ref count)
+        var module = NativeModuleCache.Acquire(modulePath);
+        Console.WriteLine($"Acquired module: {module.Path}");
+
+        // Check the reference count (should be 1)
+        int refCount = NativeModuleCache.GetRefCount(modulePath);
+        Console.WriteLine($"Reference count: {refCount}");
+
+        // Acquire again to increment the reference count
+        var module2 = NativeModuleCache.Acquire(modulePath);
+        refCount = NativeModuleCache.GetRefCount(modulePath);
+        Console.WriteLine($"Reference count after second acquire: {refCount}");
+
+        // Release one reference
+        NativeModuleCache.Release(modulePath, module);
+        refCount = NativeModuleCache.GetRefCount(modulePath);
+        Console.WriteLine($"Reference count after first release: {refCount}");
+
+        // Release the last reference
+        NativeModuleCache.Release(modulePath, module2);
+        refCount = NativeModuleCache.GetRefCount(modulePath);
+        Console.WriteLine($"Reference count after second release: {refCount}"); // Should be -1 (not cached)
+
+        // Clear the cache (though it's already empty in this example)
+        NativeModuleCache.Clear();
+    }
+}
+```
+
 ## MixerNodeJsonExtensions
 
 `MixerNodeJsonExtensions` provides JSON serialization and deserialization for `MixerNode` instances. It includes methods to convert a `MixerNode` to a JSON string and to create a `MixerNode` from JSON, with both throwing and non-throwing variants for error handling.
