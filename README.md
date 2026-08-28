@@ -371,31 +371,30 @@ public class Example
 }
 ```
 
-## NativeModuleExtensionsJsonExtensions
+## Vst3InteropTests
 
-`NativeModuleExtensionsJsonExtensions` provides JSON serialization and deserialization utilities for `NativeModule` instances. It exposes static methods to convert modules to and from JSON strings, along with instance properties to access the module's file path and underlying native representation. Prefer `TryFromJson` when parsing untrusted input to avoid exceptions on malformed data.
+`Vst3InteropTests` is the xUnit test suite for the VST3 interop functionality, covering class counting, class info retrieval, plugin class info handling, and plugin filtering operations. Each test method is a parameterless instance method that can be run individually.
 
 ### Example usage:
 
 ```csharp
 using System;
 using VstHostLite.Native;
+using VstHostLite.Native.Tests;
 
 public class Example
 {
     public static void Main()
     {
-        // Create a JSON model and serialize it
-        var model = new NativeModuleJsonModel { Path = "plugin.vst3" };
-        string json = NativeModuleExtensionsJsonExtensions.ToJson(model);
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new Vst3InteropTests();
 
-        // Deserialize back using the safe TryFromJson method
-        if (NativeModuleExtensionsJsonExtensions.TryFromJson(json, out var module))
-        {
-            Console.WriteLine($"Module path: {module.Path}");
-            var nativeModule = module.ToNativeModule;
-            Console.WriteLine($"Native module acquired: {nativeModule != null}");
-        }
+        tests.CountClasses_WithNullFactory_ReturnsZero();
+        tests.CountClasses_WithValidFactory_ReturnsNonNegativeCount();
+        tests.GetClassInfo_WithNullFactory_ThrowsAccessViolationException();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new Vst3InteropTests());
     }
 }
 ```
