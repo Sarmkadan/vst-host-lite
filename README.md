@@ -313,6 +313,36 @@ public class Example
 }
 ```
 
+## AudioGraphValidationTests
+
+`AudioGraphValidationTests` is the xUnit test suite for `AudioGraph.Validate`, `AudioGraph.IsValid`, and `AudioGraph.EnsureValid`. It verifies that the graph validation correctly identifies issues such as null/empty graphs, invalid node names or components, self-references, cycles, and disconnected components. Each test method is a parameterless instance method that can be run individually.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new AudioGraphValidationTests();
+
+        tests.Validate_ThrowsOnNullGraph();
+        tests.Validate_EmptyGraph_ReturnsError();
+        tests.Validate_SingleNodeWithValidName_ReturnsNoErrors();
+        tests.Validate_LinearChain_ReturnsNoErrors();
+        tests.Validate_GraphWithCycle_ReturnsCycleError();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new AudioGraphValidationTests());
+    }
+}
+```
+
 ## CliArgsTests
 
 `CliArgsTests` is the xUnit test suite for the command-line argument parsing of the VstHostLite application. Each test method verifies the behavior of the CLI for a specific command and argument combination, such as handling missing arguments or unknown commands.
