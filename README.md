@@ -226,3 +226,31 @@ public class Example
     }
 }
 ```
+
+## CliArgsTests
+
+`CliArgsTests` is the xUnit test suite for the command-line argument parsing of the VstHostLite application. Each test method verifies the behavior of the CLI for a specific command and argument combination, such as handling missing arguments or unknown commands.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Cli.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual tests directly (each is a parameterless method).
+        var tests = new CliArgsTests();
+
+        tests.NoArguments_PrintsUsageAndReturns1();
+        tests.UnknownCommand_PrintsUsageAndReturns1();
+        tests.InfoCommand_WithPath_ShowsUsageMessage();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new CliArgsTests());
+    }
+}
+```
