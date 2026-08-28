@@ -295,3 +295,32 @@ public class Example
     }
 }
 ```
+
+## NativeModuleExtensionsJsonExtensions
+
+`NativeModuleExtensionsJsonExtensions` provides JSON serialization and deserialization utilities for `NativeModule` instances. It exposes static methods to convert modules to and from JSON strings, along with instance properties to access the module's file path and underlying native representation. Prefer `TryFromJson` when parsing untrusted input to avoid exceptions on malformed data.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Create a JSON model and serialize it
+        var model = new NativeModuleJsonModel { Path = "plugin.vst3" };
+        string json = NativeModuleExtensionsJsonExtensions.ToJson(model);
+
+        // Deserialize back using the safe TryFromJson method
+        if (NativeModuleExtensionsJsonExtensions.TryFromJson(json, out var module))
+        {
+            Console.WriteLine($"Module path: {module.Path}");
+            var nativeModule = module.ToNativeModule;
+            Console.WriteLine($"Native module acquired: {nativeModule != null}");
+        }
+    }
+}
+```
