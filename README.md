@@ -398,3 +398,30 @@ public class Example
     }
 }
 ```
+
+## NativeModuleErrorTests
+
+`NativeModuleErrorTests` is the xUnit test suite for error handling and edge cases in the `NativeModule` class. It verifies that loading nonexistent, empty, or whitespace-only paths throws a `FileNotFoundException`, and that the `Dispose` method is safe to call multiple times.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new NativeModuleErrorTests();
+
+        tests.Load_NonexistentPath_ThrowsFileNotFoundException();
+        tests.Dispose_MultipleTimes_IsSafe();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new NativeModuleErrorTests());
+    }
+}
+```
