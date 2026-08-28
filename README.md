@@ -199,6 +199,47 @@ public class Example
 }
 ```
 
+## MixerNodeJsonExtensions
+
+`MixerNodeJsonExtensions` provides JSON serialization and deserialization for `MixerNode` instances. It includes methods to convert a `MixerNode` to a JSON string and to create a `MixerNode` from JSON, with both throwing and non-throwing variants for error handling.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Create a mixer node with 2 inputs and 256 frames
+        var mixer = new MixerNode("example-mixer", inputCount: 2, frames: 256);
+        mixer.SetGain(0, 0.5f);
+        mixer.SetGain(1, 1.5f);
+
+        // Serialize to JSON
+        string json = mixer.ToJson();
+        Console.WriteLine($"JSON: {json}");
+
+        // Deserialize back
+        var deserialized = MixerNodeJsonExtensions.FromJson(json);
+        if (deserialized != null)
+        {
+            Console.WriteLine($"Deserialized name: {deserialized.Name}");
+            Console.WriteLine($"Deserialized input 0 gain: {deserialized.GetGain(0)}");
+            Console.WriteLine($"Deserialized input 1 gain: {deserialized.GetGain(1)}");
+        }
+
+        // Using TryFromJson
+        if (MixerNodeJsonExtensions.TryFromJson(json, out var tryResult) && tryResult != null)
+        {
+            Console.WriteLine("TryFromJson succeeded");
+        }
+    }
+}
+```
+
 ## AudioGraphTests
 
 `AudioGraphTests` is the xUnit test suite for `AudioGraph`, exercising the core graph operations such as adding nodes, connecting nodes, merging graphs, and removing nodes. Each fact is a parameterless instance method that can be invoked individually to verify specific behavior.
