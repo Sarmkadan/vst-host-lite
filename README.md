@@ -528,3 +528,39 @@ public class Example
     }
 }
 ```
+
+## NativeModuleJsonTests
+`NativeModuleJsonTests` is the xUnit test suite for the JSON serialization and deserialization of `NativeModule`, verifying correct behavior for valid and invalid JSON inputs, round-trip preservation, and error conditions.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new NativeModuleJsonTests();
+
+        tests.FromJson_WithValidJson_ReturnsNativeModule();
+        tests.FromJson_WithNullJson_ThrowsArgumentNullException();
+        tests.FromJson_WithInvalidJson_ThrowsJsonException();
+        tests.TryFromJson_WithValidJson_ReturnsTrueAndModule();
+        tests.TryFromJson_WithInvalidJson_ReturnsFalseAndNull();
+        tests.Roundtrip_SerializationDeserialization_PreservesPath();
+        tests.ToJson_ProducesCamelCaseProperties();
+        tests.ToJson_WithIndentedTrue_ReturnsFormattedJson();
+        tests.FromJson_WithNonExistentPath_ThrowsFileNotFoundException();
+        tests.TryFromJson_WithNonExistentPath_ReturnsFalse();
+        tests.DtoSerializationShape_MatchesExpectedFormat();
+        tests.ToJson_WithNullModule_ThrowsArgumentNullException();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new NativeModuleJsonTests());
+    }
+}
+```
