@@ -470,3 +470,31 @@ public class Example
     }
 }
 ```
+
+## Vst3InteropJsonExtensionsTests
+
+`Vst3InteropJsonExtensionsTests` is the xUnit test suite for the JSON extension methods of `PluginClassInfo`, verifying correct serialization and deserialization behavior, including handling of null, empty, whitespace, and invalid JSON, as well as round-trip preservation of properties. Each test method is a parameterless instance method that can be run individually.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+using VstHostLite.Native.Tests;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Run the individual facts directly (each is a parameterless method).
+        var tests = new Vst3InteropJsonExtensionsTests();
+
+        tests.ToJson_WithValidPluginClassInfo_ReturnsJsonString();
+        tests.FromJson_WithValidJson_ReturnsPluginClassInfo();
+        tests.Roundtrip_SerializationDeserialization_PreservesAllProperties();
+
+        // The type also provides value-style equality.
+        Console.WriteLine(tests == new Vst3InteropJsonExtensionsTests());
+    }
+}
+```
