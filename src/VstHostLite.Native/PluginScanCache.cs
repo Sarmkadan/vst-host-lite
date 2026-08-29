@@ -24,6 +24,24 @@ public static class PluginScanCache
     public const int CacheSchemaVersion = 2;
 
     /// <summary>
+    /// Gets or sets an optional callback for cache diagnostic messages.
+    /// </summary>
+    public static Action<string>? Log { get; set; }
+
+    private static string ToLogValue(string value)
+    {
+        return value.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\r", "\\r", StringComparison.Ordinal)
+            .Replace("\n", "\\n", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
+    }
+
+    private static void WriteLog(string message)
+    {
+        Log?.Invoke(message);
+    }
+
+    /// <summary>
     /// Cache entry structure containing metadata for validation.
     /// </summary>
     private sealed class CacheEntry
@@ -81,6 +99,7 @@ public static class PluginScanCache
 
         if (!File.Exists(pluginPath))
         {
+            WriteLog($"event=cache_miss reason=plugin_file_missing pluginPath=\"{ToLogValue(pluginPath)}\"");
             return false;
         }
 
@@ -89,6 +108,7 @@ public static class PluginScanCache
         // Check if cache file exists
         if (!File.Exists(cacheFilePath))
         {
+            WriteLog($"event=cache_miss reason=cache_file_missing pluginPath=\"{ToLogValue(pluginPath)}\"");
             return false;
         }
 
@@ -101,6 +121,7 @@ public static class PluginScanCache
             if (cacheEntry?.PluginClasses == null || cacheEntry.SchemaVersion != CacheSchemaVersion)
             {
                 // Invalid schema version or missing data, treat as stale
+                WriteLog($"event=cache_miss reason=stale pluginPath=\"{ToLogValue(pluginPath)}\"");
                 File.Delete(cacheFilePath);
                 return false;
             }
@@ -111,16 +132,19 @@ public static class PluginScanCache
                 cacheEntry.LastWriteTimeUtc != pluginFileInfo.LastWriteTimeUtc)
             {
                 // Plugin file has changed, invalidate cache
+                WriteLog($"event=cache_miss reason=stale pluginPath=\"{ToLogValue(pluginPath)}\"");
                 File.Delete(cacheFilePath);
                 return false;
             }
 
             cachedInfo = cacheEntry.PluginClasses;
+            WriteLog($"event=cache_hit pluginPath=\"{ToLogValue(pluginPath)}\"");
             return true;
         }
-        catch
+        catch (Exception ex)
         {
             // If any error occurs reading/deserializing cache, treat as invalid
+            WriteLog($"event=cache_error operation=read pluginPath=\"{ToLogValue(pluginPath)}\" message=\"{ToLogValue(ex.Message)}\"");
             return false;
         }
     }
@@ -243,6 +267,7 @@ public static class PluginScanCache
 
         var json = JsonSerializer.Serialize(entry, _jsonOptions);
         File.WriteAllText(cacheFilePath, json);
+        WriteLog($"event=cache_save pluginPath=\"{ToLogValue(pluginPath)}\"");
     }
 
     /// <summary>
@@ -256,6 +281,8 @@ public static class PluginScanCache
         {
             File.Delete(cacheFilePath);
         }
+
+        WriteLog($"event=cache_clear pluginPath=\"{ToLogValue(pluginPath)}\"");
     }
 
     /// <summary>
