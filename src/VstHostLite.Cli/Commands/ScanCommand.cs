@@ -6,6 +6,12 @@ namespace VstHostLite.Cli.Commands;
 
 public class ScanCommand : ICliCommand
 {
+    private static readonly HashSet<string> KnownOptions = new(StringComparer.Ordinal)
+    {
+        "--filter",
+        "--category"
+    };
+
     public string Name => "scan";
     public string Description => "recursively scan directory for plugins";
 
@@ -17,27 +23,21 @@ public class ScanCommand : ICliCommand
             return 1;
         }
 
-        // Parse arguments
-        string path = args[0];
-        string? filter = null;
-        string? category = null;
-
-        for (int i = 1; i < args.Length; i++)
+        if (!CliOptionParser.TryParse(args, 1, KnownOptions, out var positionalArguments, out var options, out var error))
         {
-            if (args[i] == "--filter" && i + 1 < args.Length)
-            {
-                filter = args[++i];
-            }
-            else if (args[i] == "--category" && i + 1 < args.Length)
-            {
-                category = args[++i];
-            }
-            else
-            {
-                Console.Error.WriteLine($"unknown argument: {args[i]}");
-                return 1;
-            }
+            Console.Error.WriteLine(error);
+            return 1;
         }
+
+        if (positionalArguments.Count > 1)
+        {
+            Console.Error.WriteLine($"unknown argument: {positionalArguments[1]}");
+            return 1;
+        }
+
+        string path = positionalArguments[0];
+        options.TryGetValue("--filter", out var filter);
+        options.TryGetValue("--category", out var category);
 
         return Scan(path, filter, category);
     }

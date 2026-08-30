@@ -6,6 +6,8 @@ namespace VstHostLite.Cli.Commands;
 
 public class ScanOneCommand : ICliCommand
 {
+    private static readonly HashSet<string> KnownOptions = new(StringComparer.Ordinal);
+
     public string Name => "scan-one";
     public string Description => "scan a single plugin (used internally for process isolation)";
 
@@ -17,7 +19,13 @@ public class ScanOneCommand : ICliCommand
             return 1;
         }
 
-        string path = args[0];
+        if (!CliOptionParser.TryParse(args, 1, KnownOptions, out var positionalArguments, out _, out var error))
+        {
+            Console.Error.WriteLine(error);
+            return 1;
+        }
+
+        string path = positionalArguments[0];
         try
         {
             using var module = NativeModule.Load(path);
