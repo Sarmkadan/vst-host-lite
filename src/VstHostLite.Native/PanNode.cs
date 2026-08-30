@@ -9,7 +9,7 @@ namespace VstHostLite.Native;
 public sealed class PanNode
 {
     private readonly int _frames;
-    private float _pan = 0.0f; // -1.0 (left) to 1.0 (right)
+    private float _pan = PanNodeConstants.CenterPan; // -1.0 (left) to 1.0 (right)
 
     /// <summary>
     /// Creates a new PanNode.
@@ -46,7 +46,7 @@ public sealed class PanNode
                 throw new ArgumentException("Pan must be a valid finite number", nameof(value));
             }
 
-            if (value < -1.0f || value > 1.0f)
+            if (value < PanNodeConstants.MinimumPan || value > PanNodeConstants.MaximumPan)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), "Pan must be between -1.0 and 1.0");
             }
@@ -95,7 +95,7 @@ public sealed class PanNode
         // where θ = (π/4) * (1.0 + pan)
         // This ensures constant power across the pan range
 
-        float angle = (MathF.PI / 4.0f) * (1.0f + _pan);
+        float angle = PanNodeConstants.QuarterPi * (PanNodeConstants.MaximumPan + _pan);
         float cosGain = MathF.Cos(angle);
         float sinGain = MathF.Sin(angle);
 
