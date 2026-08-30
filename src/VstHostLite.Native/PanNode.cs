@@ -10,6 +10,9 @@ public sealed class PanNode
 {
     private readonly int _frames;
     private float _pan = PanNodeConstants.CenterPan; // -1.0 (left) to 1.0 (right)
+    private float _targetPan = PanNodeConstants.CenterPan;
+    private float _panIncrement;
+    private int _rampFramesRemaining;
 
     /// <summary>
     /// Creates a new PanNode.
@@ -52,7 +55,37 @@ public sealed class PanNode
             }
 
             _pan = value;
+            _targetPan = value;
+            _panIncrement = 0.0f;
+            _rampFramesRemaining = 0;
         }
+    }
+
+    /// <summary>
+    /// Smoothly changes the pan position over the specified number of audio frames.
+    /// </summary>
+    /// <param name="target">Target pan position (-1.0 = fully left, 1.0 = fully right).</param>
+    /// <param name="rampFrames">Number of audio frames over which to reach the target.</param>
+    public void SetPanSmoothed(float target, int rampFrames)
+    {
+        if (float.IsNaN(target) || float.IsInfinity(target))
+        {
+            throw new ArgumentException("Pan must be a valid finite number", nameof(target));
+        }
+
+        if (target < PanNodeConstants.MinimumPan || target > PanNodeConstants.MaximumPan)
+        {
+            throw new ArgumentOutOfRangeException(nameof(target), "Pan must be between -1.0 and 1.0");
+        }
+
+        if (rampFrames <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rampFrames), "Ramp frames must be positive");
+        }
+
+        _targetPan = target;
+        _panIncrement = (target - _pan) / rampFrames;
+        _rampFramesRemaining = rampFrames;
     }
 
     /// <summary>
@@ -95,12 +128,23 @@ public sealed class PanNode
         // where θ = (π/4) * (1.0 + pan)
         // This ensures constant power across the pan range
 
-        float angle = PanNodeConstants.QuarterPi * (PanNodeConstants.MaximumPan + _pan);
-        float cosGain = MathF.Cos(angle);
-        float sinGain = MathF.Sin(angle);
-
         for (int i = 0; i < _frames; i++)
         {
+            if (_rampFramesRemaining > 0)
+            {
+                _pan += _panIncrement;
+                _rampFramesRemaining--;
+
+                if (_rampFramesRemaining == 0)
+                {
+                    _pan = _targetPan;
+                    _panIncrement = 0.0f;
+                }
+            }
+
+            float angle = PanNodeConstants.QuarterPi * (PanNodeConstants.MaximumPan + _pan);
+            float cosGain = MathF.Cos(angle);
+            float sinGain = MathF.Sin(angle);
             float sample = monoInput[i];
             left[i] = sample * cosGain;
             right[i] = sample * sinGain;
