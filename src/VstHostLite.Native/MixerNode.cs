@@ -19,6 +19,17 @@ public sealed class MixerNode
     public MixerNode(string name, int inputCount, int frames)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
+
+        if (inputCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(inputCount), "Input count must be positive");
+        }
+
+        if (frames <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be positive");
+        }
+
         _inputCount = inputCount;
         _frames = frames;
         _gains = new float[inputCount];
@@ -93,6 +104,14 @@ public sealed class MixerNode
             throw new ArgumentException($"Output buffer must have {_frames} frames, got {output.Length}", nameof(output));
         }
 
+        for (int inputIdx = 0; inputIdx < inputs.Length; inputIdx++)
+        {
+            if (inputs[inputIdx] is null)
+            {
+                throw new ArgumentException($"Input buffer at index {inputIdx} cannot be null", nameof(inputs));
+            }
+        }
+
         // Clear output buffer
         Array.Clear(output, 0, output.Length);
 
@@ -101,8 +120,8 @@ public sealed class MixerNode
         {
             float gain = _gains[inputIdx];
 
-            // Skip if gain is zero or input is null
-            if (gain == 0.0f || inputs[inputIdx] == null)
+            // Skip if gain is zero
+            if (gain == 0.0f)
             {
                 continue;
             }
