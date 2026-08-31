@@ -525,5 +525,64 @@ namespace VstHostLite.Native.Tests
             Assert.NotNull(output);
             Assert.Equal(frames, output.Length);
         }
+
+        [Fact]
+        /// <summary>
+        /// Tests that processing an impulse (1.0 followed by zeros) with a specific delay
+        /// produces output where the impulse appears after the delay period.
+        /// </summary>
+        public void Process_WithImpulseAndDelay_OutputIsDelayedByDelaySamples()
+        {
+            // Arrange
+            const int frames = 5;
+            const int sampleRate = 44100;
+            const int delaySamples = 2;
+            var delayNode = new DelayNode("test-impulse-delay", 1000f, sampleRate, frames);
+            delayNode.DelaySamples = delaySamples;
+            delayNode.Feedback = 0.0f; // No feedback to hear just the delayed impulse
+            delayNode.DryWetMix = 1.0f; // All wet to see the delayed signal clearly
+
+            var input = new float[] { 1f, 0f, 0f, 0f, 0f }; // Impulse at sample 0
+            var output = new float[frames];
+
+            // Act
+            delayNode.Process(input, output);
+
+            // Assert - with delay of 2 samples:
+            // output[0] should be 0 (no delayed signal yet)
+            // output[1] should be 0 (still no delayed signal)
+            // output[2] should be 1 (the delayed impulse)
+            // output[3] and [4] should be 0 (no more input)
+            Assert.Equal(0f, output[0]);
+            Assert.Equal(0f, output[1]);
+            Assert.Equal(1f, output[2], 5); // Allow small floating point differences
+            Assert.Equal(0f, output[3]);
+            Assert.Equal(0f, output[4]);
+        }
+
+        [Fact]
+        /// <summary>
+        /// Tests that processing with a dry/wet mix of 0 returns the unmodified dry signal,
+        /// regardless of delay or feedback settings.
+        /// </summary>
+        public void Process_WithDryWetMixZero_ReturnsPureDrySignal()
+        {
+            // Arrange
+            const int frames = 3;
+            const int sampleRate = 44100;
+            var delayNode = new DelayNode("test-dry-mix-zero", 1000f, sampleRate, frames);
+            delayNode.DelaySamples = 100; // Non-zero delay
+            delayNode.Feedback = 0.9f; // High feedback
+            delayNode.DryWetMix = 0.0f; // All dry
+
+            var input = new float[] { 0.5f, 0.25f, -0.1f };
+            var output = new float[frames];
+
+            // Act
+            delayNode.Process(input, output);
+
+            // Assert - with dry/wet mix = 0, output should equal input exactly
+            Assert.Equal(input, output);
+        }
     }
 }
