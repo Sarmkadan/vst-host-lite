@@ -6,13 +6,15 @@ namespace VstHostLite.Native;
 /// </summary>
 public sealed class DelayNode : IEquatable<DelayNode>
 {
+    private const float DefaultDelayTimeMs = 250.0f;
+
     private readonly int _maxDelaySamples;
     private readonly int _frames;
     private readonly float[] _delayBuffer;
     private int _writeIndex;
     private float _feedback = 0.5f;
     private float _dryWetMix = 0.5f;
-    private int _delaySamples = DelayNodeConstants.DefaultMaxDelayTimeMs; // Default: 1/4 second at 44.1kHz
+    private int _delaySamples;
 
     /// <summary>
     /// Creates a new DelayNode.
@@ -43,6 +45,8 @@ public sealed class DelayNode : IEquatable<DelayNode>
         _frames = frames;
         var maxDelaySamples = (int)(maxDelayTimeMs * sampleRate / 1000.0f);
         _maxDelaySamples = Math.Max(1, maxDelaySamples);
+        var defaultDelaySamples = (int)(DefaultDelayTimeMs * sampleRate / 1000.0f);
+        _delaySamples = Math.Clamp(defaultDelaySamples, 0, _maxDelaySamples);
         _delayBuffer = new float[_maxDelaySamples];
         _writeIndex = 0;
     }
