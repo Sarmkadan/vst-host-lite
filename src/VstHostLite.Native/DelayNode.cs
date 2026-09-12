@@ -25,7 +25,9 @@ public sealed class DelayNode : IEquatable<DelayNode>
     /// <param name="frames">Number of audio frames per buffer</param>
     public DelayNode(string name, float maxDelayTimeMs, int sampleRate, int frames)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
+
+        Name = name;
 
         if (maxDelayTimeMs <= 0)
         {
