@@ -18,7 +18,9 @@ public sealed class MixerNode
     /// <param name="frames">Number of audio frames per buffer</param>
     public MixerNode(string name, int inputCount, int frames)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
+
+        Name = name;
 
         if (inputCount <= 0)
         {
