@@ -1,10 +1,11 @@
 namespace VstHostLite.Native;
 
 /// <summary>
-/// Represents an audio processing node that can be part of an audio graph.
-/// Implementations provide audio processing functionality for specific node types
-/// like generators, effects, and mixers.
+/// Defines an audio processing node that can participate in an audio graph.
 /// </summary>
+/// <remarks>
+/// Implementations can represent generators, effects, mixers, or other audio-processing components.
+/// </remarks>
 public interface IAudioNode
 {
     /// <summary>
@@ -13,24 +14,28 @@ public interface IAudioNode
     string Name { get; }
 
     /// <summary>
-    /// Prepares the node for processing with the given sample rate and maximum block size.
+    /// Prepares the node to process audio at the specified sample rate and maximum block size.
     /// </summary>
-    /// <param name="sampleRate">The audio sample rate in Hz</param>
-    /// <param name="maxBlock">The maximum number of frames per processing block</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if sampleRate or maxBlock is not positive</exception>
+    /// <param name="sampleRate">The audio sample rate, in hertz.</param>
+    /// <param name="maxBlock">The maximum number of frames in a processing block.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="sampleRate"/> or <paramref name="maxBlock"/> is not positive.
+    /// </exception>
     void Prepare(float sampleRate, int maxBlock);
 
     /// <summary>
-    /// Processes audio data through this node.
+    /// Processes a block of audio through the node.
     /// </summary>
-    /// <param name="inputs">Array of input audio buffers (may be empty for generators)</param>
-    /// <param name="output">Output audio buffer to write processed result</param>
-    /// <exception cref="ArgumentNullException">Thrown if output is null</exception>
-    /// <exception cref="ArgumentException">Thrown if input/output dimensions are invalid</exception>
+    /// <param name="inputs">
+    /// The input audio buffers. This array can be empty for nodes that generate audio.
+    /// </param>
+    /// <param name="output">The audio buffer to which the processed block is written.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="output"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">The input or output buffer dimensions are invalid.</exception>
     void Process(in AudioBuffer[] inputs, AudioBuffer output);
 
     /// <summary>
-    /// Resets the internal state of this node (clears buffers, resets phase, etc.)
+    /// Resets the node's internal processing state.
     /// </summary>
     void Reset();
 }
