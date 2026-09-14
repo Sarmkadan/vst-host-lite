@@ -21,7 +21,7 @@ public sealed class SineGeneratorNode
     /// <param name="frames">Number of audio frames per buffer</param>
     public SineGeneratorNode(string name, float sampleRate, int frames)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
 
         if (sampleRate <= 0)
         {
@@ -33,6 +33,7 @@ public sealed class SineGeneratorNode
             throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be positive");
         }
 
+        Name = name;
         _sampleRate = sampleRate;
         _frames = frames;
         UpdatePhaseIncrement();
