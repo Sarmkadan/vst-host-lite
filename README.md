@@ -56,7 +56,7 @@ public class Example
 
 ## MixerNode
 
-`MixerNode` sums multiple input audio buffers into a single output buffer, applying a per-input gain that can be adjusted at runtime with `SetGain` and read back with `GetGain`. Each node has a read-only `Name` for identification and is constructed with a name, an input count, and a fixed frame count. Call `Process` once per audio cycle with an array of input buffers and an output buffer of matching length to produce the mixed result.
+`MixerNode` sums N input float buffers into one output buffer with per-input gain control. This is a processing node that can be added to the audio graph via `AudioGraph.AddNode()`. Each node has a read-only `Name` for identification and is constructed with a name, an input count, and a fixed frame count. Call `Process` once per audio cycle with an array of input buffers and an output buffer of matching length to produce the mixed result.
 
 ### Example usage:
 
