@@ -180,6 +180,11 @@ public sealed class DelayNode : IEquatable<DelayNode>
         _writeIndex = 0;
     }
 
+    public override string ToString()
+    {
+        return $"{Name}: Delay={DelaySamples} samples, Feedback={Feedback:P1}, Mix={DryWetMix:P1}";
+    }
+
     public bool Equals(DelayNode? other)
     {
         if (other is null)
