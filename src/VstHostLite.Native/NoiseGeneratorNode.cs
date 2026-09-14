@@ -26,7 +26,7 @@ public sealed class NoiseGeneratorNode : INoiseGeneratorNode, IEquatable<NoiseGe
     /// </param>
     public NoiseGeneratorNode(string name, int frames, int? seed = null)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
         if (frames <= 0)
             throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be positive.");
 
