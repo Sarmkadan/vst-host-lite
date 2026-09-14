@@ -4,6 +4,7 @@ public static class SampleRateConverter
 {
     public static float[] Convert(float[] input, int inputRate, int outputRate)
     {
+        ArgumentNullException.ThrowIfNull(input);
         if (input.Length == 0)
         {
             return new float[0];
