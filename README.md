@@ -530,6 +530,7 @@ public class Example
 ```
 
 ## NativeModuleJsonTests
+
 `NativeModuleJsonTests` is the xUnit test suite for the JSON serialization and deserialization of `NativeModule`, verifying correct behavior for valid and invalid JSON inputs, round-trip preservation, and error conditions.
 
 ### Example usage:
@@ -566,6 +567,7 @@ public class Example
 ```
 
 ## AudioGraphExtensionsTests
+
 `AudioGraphExtensionsTests` is the xUnit test suite for the extension methods of `AudioGraph`, verifying correct behavior for graph manipulation operations like adding/removing nodes, clearing graphs, and querying node order and components. Each fact is a parameterless instance method that can be invoked individually.
 
 ### Example usage:
@@ -594,6 +596,7 @@ public class Example
 ```
 
 ## CliArgsTestsValidation
+
 `CliArgsTestsValidation` provides static validation helpers for command-line argument testing scenarios in the VstHostLite CLI test suite. It offers methods to validate, check validity, and ensure validity of both `CliArgsTests` instances and string arrays representing command-line arguments.
 
 ### Example usage:
@@ -619,6 +622,41 @@ public class Example
         // Throw exception if validation fails
         args.EnsureValid(); // Won't throw for valid args
         tests.EnsureValid(); // Won't throw for valid tests
+    }
+}
+```
+
+## DelayNode
+
+A delay node that implements a circular-buffer delay line with configurable delay time, feedback, and dry/wet mix. This is a processing node that can be added to the audio graph.
+
+### Example usage:
+
+```csharp
+using System;
+using VstHostLite.Native;
+
+public class Example
+{
+    public static void Main()
+    {
+        // Create a delay node that can delay up to 500ms, at 44100 Hz sample rate, processing 256 frames at a time.
+        var delay = new DelayNode("my-delay", maxDelayTimeMs: 500.0f, sampleRate: 44100, frames: 256);
+
+        // Set the delay to 300 milliseconds (convert to samples).
+        int delaySamples = (int)(300.0f * 44100 / 1000.0f); // 13230 samples
+        delay.DelaySamples = delaySamples;
+
+        // Set the feedback to 25% and the mix to 50% wet.
+        delay.Feedback = 0.25f;
+        delay.DryWetMix = 0.5f;
+
+        // Allocate input and output buffers for one processing block.
+        float[] input = new float[256];
+        float[] output = new float[256];
+
+        // Process the audio block (input is modified by the delay effect and written to output).
+        delay.Process(input, output);
     }
 }
 ```
