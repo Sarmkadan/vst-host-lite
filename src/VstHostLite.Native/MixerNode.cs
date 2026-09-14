@@ -155,4 +155,13 @@ public sealed class MixerNode
     /// Gets the number of audio frames per buffer.
     /// </summary>
     public int Frames => _frames;
+
+    /// <summary>
+    /// Returns a concise summary of the mixer node.
+    /// </summary>
+    /// <returns>A string containing the name, input count, and frame count.</returns>
+    public override string ToString()
+    {
+        return $"MixerNode: Name={Name}, Inputs={InputCount}, Frames={Frames}";
+    }
 }
