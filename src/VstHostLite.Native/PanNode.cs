@@ -21,13 +21,14 @@ public sealed class PanNode
     /// <param name="frames">Number of audio frames per buffer</param>
     public PanNode(string name, int frames)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
 
         if (frames <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(frames), "Frames must be positive");
         }
 
+        Name = name;
         _frames = frames;
     }
 
