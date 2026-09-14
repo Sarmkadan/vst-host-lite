@@ -103,6 +103,28 @@ public sealed class MeteringNode : IMeteringNode
 /// <summary>
 /// Record that holds per‑channel peak and RMS values.
 /// </summary>
-/// <param name="Peak">Array of peak values (absolute maximum) per channel.</param>
-/// <param name="RMS">Array of RMS values per channel.</param>
-public readonly record struct Metering(float[] Peak, float[] RMS);
+public readonly record struct Metering
+{
+    /// <summary>
+    /// Array of peak values (absolute maximum) per channel.
+    /// </summary>
+    public float[] Peak { get; }
+
+    /// <summary>
+    /// Array of RMS values per channel.
+    /// </summary>
+    public float[] RMS { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Metering"/> struct.
+    /// </summary>
+    /// <param name="Peak">Array of peak values (absolute maximum) per channel.</param>
+    /// <param name="RMS">Array of RMS values per channel.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="Peak"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="RMS"/> is <see langword="null"/>.</exception>
+    public Metering(float[] Peak, float[] RMS)
+    {
+        this.Peak = Peak ?? throw new ArgumentNullException(nameof(Peak));
+        this.RMS = RMS ?? throw new ArgumentNullException(nameof(RMS));
+    }
+}
