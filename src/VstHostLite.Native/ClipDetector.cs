@@ -7,13 +7,15 @@ namespace VstHostLite.Native;
 /// </summary>
 public static class ClipDetector
 {
+    private const float DefaultThreshold = 1.0f;
+
     /// <summary>
     /// Detects clipping in a float buffer.
     /// </summary>
     /// <param name="buffer">The audio buffer to scan</param>
     /// <param name="threshold">The threshold above which a sample is considered clipped (default: 1.0f)</param>
     /// <returns>A ClipDetectionResult containing clipping statistics</returns>
-    public static ClipDetectionResult Detect(float[] buffer, float threshold = 1.0f)
+    public static ClipDetectionResult Detect(float[] buffer, float threshold = DefaultThreshold)
     {
         ArgumentNullException.ThrowIfNull(buffer);
 
@@ -65,7 +67,7 @@ public static class ClipDetector
     /// <param name="buffer">The audio buffer to scan</param>
     /// <param name="threshold">The threshold above which a sample is considered clipped (default: 1.0f)</param>
     /// <returns>A ClipDetectionResult containing clipping statistics</returns>
-    public static ClipDetectionResult Detect(AudioBuffer buffer, float threshold = 1.0f)
+    public static ClipDetectionResult Detect(AudioBuffer buffer, float threshold = DefaultThreshold)
     {
         ArgumentNullException.ThrowIfNull(buffer);
 
