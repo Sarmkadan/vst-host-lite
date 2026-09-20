@@ -67,32 +67,32 @@ public class ScanCommand : ICliCommand
 
             foreach (var pluginPath in pluginFiles)
             {
-                try
+                var result = NativeModule.TryLoad(pluginPath);
+                if (!result.Success)
                 {
-                    using var module = NativeModule.Load(pluginPath);
-                    var infos = module.ScanPluginClasses();
-                    totalClasses += infos.Count;
-
-                    // Apply filters
-                    var filteredInfos = ApplyFilters(infos, filter, category);
-                    if (filteredInfos.Count > 0)
-                    {
-                        matchingClasses += filteredInfos.Count;
-                        Console.WriteLine($"Plugin: {Path.GetFileName(pluginPath)}");
-                        Console.WriteLine($" Path: {pluginPath}");
-                        Console.WriteLine($" Classes: {filteredInfos.Count}");
-
-                        for (var i = 0; i < filteredInfos.Count; i++)
-                        {
-                            var info = filteredInfos[i];
-                            Console.WriteLine($" [{i}] {info.Name} ({info.Category}) cid={info.Cid}");
-                        }
-                        Console.WriteLine();
-                    }
+                    Console.Error.WriteLine($"error scanning {pluginPath}: {result.ErrorMessage}");
+                    continue;
                 }
-                catch (Exception ex)
+
+                using var module = result.Module!;
+                var infos = module.ScanPluginClasses();
+                totalClasses += infos.Count;
+
+                // Apply filters
+                var filteredInfos = ApplyFilters(infos, filter, category);
+                if (filteredInfos.Count > 0)
                 {
-                    Console.Error.WriteLine($"error scanning {pluginPath}: {ex.Message}");
+                    matchingClasses += filteredInfos.Count;
+                    Console.WriteLine($"Plugin: {Path.GetFileName(pluginPath)}");
+                    Console.WriteLine($" Path: {pluginPath}");
+                    Console.WriteLine($" Classes: {filteredInfos.Count}");
+
+                    for (var i = 0; i < filteredInfos.Count; i++)
+                    {
+                        var info = filteredInfos[i];
+                        Console.WriteLine($" [{i}] {info.Name} ({info.Category}) cid={info.Cid}");
+                    }
+                    Console.WriteLine();
                 }
             }
 

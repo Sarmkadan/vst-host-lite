@@ -51,6 +51,19 @@ public sealed class NativeModule : IDisposable, IEquatable<NativeModule>
         return module;
     }
 
+    public static ModuleLoadResult TryLoad(string path)
+    {
+        try
+        {
+            var module = Load(path);
+            return new ModuleLoadResult(true, module, null);
+        }
+        catch (Exception ex)
+        {
+            return new ModuleLoadResult(false, null, ex.Message);
+        }
+    }
+
     // VST3 requires the module entry point to be called once before any
     // factory calls, and the exit point on unload. Names differ per platform.
     private void Enter()

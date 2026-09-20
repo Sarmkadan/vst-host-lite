@@ -17,12 +17,17 @@ public class InfoCommand : ICliCommand
         }
 
         string path = args[0];
-        try
+        var result = NativeModule.TryLoad(path);
+        if (!result.Success)
         {
-            using var module = NativeModule.Load(path);
-            var infos = module.ScanPluginClasses();
+            Console.Error.WriteLine($"error: {result.ErrorMessage}");
+            return 1;
+        }
 
-            Console.WriteLine($"module : {module.Path}");
+        using var module = result.Module!;
+        var infos = module.ScanPluginClasses();
+
+        Console.WriteLine($"module : {module.Path}");
             Console.WriteLine($"classes: {infos.Count}");
             for (var i = 0; i < infos.Count; i++)
             {
@@ -30,11 +35,5 @@ public class InfoCommand : ICliCommand
                 Console.WriteLine($" [{i}] {info.Name} ({info.Category}) cid={info.Cid}");
             }
             return 0;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"error: {ex.Message}");
-            return 1;
-        }
     }
 }
