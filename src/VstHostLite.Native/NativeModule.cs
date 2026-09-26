@@ -53,6 +53,8 @@ public sealed class NativeModule : IDisposable, IEquatable<NativeModule>
 
     public static ModuleLoadResult TryLoad(string path)
     {
+        ArgumentNullException.ThrowIfNull(path);
+
         try
         {
             var module = Load(path);
