@@ -7,6 +7,9 @@ internal static class CliOptionParser
 {
     public static bool TryParse(string[] args, int minPositional, HashSet<string> knownOptions, out List<string> positionalArguments, out Dictionary<string, string> options, out string error)
     {
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(knownOptions);
+
         positionalArguments = new List<string>();
         options = new Dictionary<string, string>(StringComparer.Ordinal);
         error = string.Empty;
