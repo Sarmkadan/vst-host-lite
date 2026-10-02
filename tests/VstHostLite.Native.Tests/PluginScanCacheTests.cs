@@ -190,6 +190,10 @@ public class PluginScanCacheTests : IPluginScanCacheTests, IEquatable<PluginScan
             var plugin1Path = Path.Combine(testDir, "plugin1.vst3");
             var plugin2Path = Path.Combine(testDir, "plugin2.vst3");
 
+            // Create dummy plugin files so Save can read file metadata
+            File.WriteAllBytes(plugin1Path, new byte[] { 0x00 });
+            File.WriteAllBytes(plugin2Path, new byte[] { 0x00 });
+
             var testInfos1 = new List<PluginClassInfo> { new PluginClassInfo("cid1", "Cat1", "Plugin1") };
             var testInfos2 = new List<PluginClassInfo> { new PluginClassInfo("cid2", "Cat2", "Plugin2") };
 

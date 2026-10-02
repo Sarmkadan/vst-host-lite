@@ -52,7 +52,18 @@ public static class DelayNodeJsonExtensions
             return null;
         }
 
-        return JsonSerializer.Deserialize<DelayNode>(json, _jsonOptions);
+        try
+        {
+            return JsonSerializer.Deserialize<DelayNode>(json, _jsonOptions);
+        }
+        catch (JsonException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            throw new JsonException(ex.Message, ex);
+        }
     }
 
     /// <summary>

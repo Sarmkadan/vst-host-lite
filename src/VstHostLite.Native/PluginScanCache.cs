@@ -28,6 +28,11 @@ public static class PluginScanCache
     /// </summary>
     public static Action<string>? Log { get; set; }
 
+    /// <summary>
+    /// Tracks all cache file paths created by Save, so ClearAll can find them.
+    /// </summary>
+    private static readonly HashSet<string> _knownCacheFiles = new(StringComparer.Ordinal);
+
     private static string ToLogValue(string value)
     {
         return value.Replace("\\", "\\\\", StringComparison.Ordinal)
@@ -267,6 +272,10 @@ public static class PluginScanCache
 
         var json = JsonSerializer.Serialize(entry, _jsonOptions);
         File.WriteAllText(cacheFilePath, json);
+        lock (_knownCacheFiles)
+        {
+            _knownCacheFiles.Add(cacheFilePath);
+        }
         WriteLog($"event=cache_save pluginPath=\"{ToLogValue(pluginPath)}\"");
     }
 
@@ -290,20 +299,36 @@ public static class PluginScanCache
     /// </summary>
     public static void ClearAll()
     {
+        // Collect all cache files: from the assembly directory and from the tracked set
+        var filesToDelete = new HashSet<string>(StringComparer.Ordinal);
+
         var directory = Path.GetDirectoryName(typeof(PluginScanCache).Assembly.Location);
         if (directory != null)
         {
-            var cacheFiles = Directory.GetFiles(directory, "*" + CacheFileExtension);
-            foreach (var cacheFile in cacheFiles)
+            foreach (var f in Directory.GetFiles(directory, "*" + CacheFileExtension))
             {
-                try
-                {
-                    File.Delete(cacheFile);
-                }
-                catch
-                {
-                    // Ignore errors during cleanup
-                }
+                filesToDelete.Add(f);
+            }
+        }
+
+        lock (_knownCacheFiles)
+        {
+            foreach (var f in _knownCacheFiles)
+            {
+                filesToDelete.Add(f);
+            }
+            _knownCacheFiles.Clear();
+        }
+
+        foreach (var cacheFile in filesToDelete)
+        {
+            try
+            {
+                File.Delete(cacheFile);
+            }
+            catch
+            {
+                // Ignore errors during cleanup
             }
         }
     }

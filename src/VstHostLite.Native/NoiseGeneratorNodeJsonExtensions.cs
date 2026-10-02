@@ -52,7 +52,18 @@ public static class NoiseGeneratorNodeJsonExtensions
             return null;
         }
 
-        return JsonSerializer.Deserialize<NoiseGeneratorNode>(json, _jsonOptions);
+        try
+        {
+            return JsonSerializer.Deserialize<NoiseGeneratorNode>(json, _jsonOptions);
+        }
+        catch (JsonException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            throw new JsonException(ex.Message, ex);
+        }
     }
 
     /// <summary>

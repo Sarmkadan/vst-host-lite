@@ -53,7 +53,7 @@ public static class Program
     {
         Console.WriteLine("vst-host-lite - minimal VST3 host experiment");
         Console.WriteLine();
-        Console.WriteLine("usage:");
+        Console.WriteLine("usage: ");
         Console.WriteLine(" vsthost info <path-to.vst3> list plugin factory classes");
         Console.WriteLine(" vsthost validate <path-to-graph.json> validate audio graph");
         Console.WriteLine(" vsthost graph <path-to-graph.json> display audio graph structure");
